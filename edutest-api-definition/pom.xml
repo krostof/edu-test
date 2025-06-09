@@ -7,13 +7,12 @@
 
     <!-- PARENT - powinien być główny projekt EduTest -->
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.0</version>
-        <relativePath/>
+        <groupId>com.edutest</groupId>
+        <artifactId>edutest-parent</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>com.edutest</groupId>
     <artifactId>edutest-api-definition</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <description>OpenAPI specification and generated models</description>
