@@ -1,5 +1,8 @@
-package com.edutest.persistance.entity.test;
+package com.edutest.domain.assignment;
 
+import lombok.Getter;
+
+@Getter
 public enum AssignmentType {
     SINGLE_CHOICE("Single Choice"),
     MULTIPLE_CHOICE("Multiple Choice"),
@@ -10,10 +13,6 @@ public enum AssignmentType {
 
     AssignmentType(String displayName) {
         this.displayName = displayName;
-    }
-
-    public String getDisplayName() {
-        return displayName;
     }
 
     public boolean isAutoGradeable() {

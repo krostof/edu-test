@@ -1,19 +1,15 @@
-package com.edutest.persistance.entity.test;
+package com.edutest.domain.test;
 
 
-import com.edutest.persistance.entity.assigment.Assignment;
-import com.edutest.persistance.entity.common.BaseEntity;
-import com.edutest.persistance.entity.group.StudentGroup;
-import com.edutest.persistance.entity.user.User;
-import jakarta.persistence.*;
+import com.edutest.domain.assignment.Assignment;
+import com.edutest.domain.group.StudentGroup;
+import com.edutest.domain.user.User;
 import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "tests")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,48 +17,30 @@ import java.util.List;
 @Builder
 public class Test extends BaseEntity {
 
-    @Column(name = "title", nullable = false, length = 200)
     private String title;
 
-    @Column(name = "description", length = 1000)
     private String description;
 
-    @Column(name = "start_date", nullable = false)
     private LocalDateTime startDate;
 
-    @Column(name = "end_date", nullable = false)
     private LocalDateTime endDate;
 
-    @Column(name = "time_limit")
     private Integer timeLimit; // w minutach
 
-    @Column(name = "allow_navigation", nullable = false)
     @Builder.Default
     private Boolean allowNavigation = true;
 
-    @Column(name = "randomize_order", nullable = false)
     @Builder.Default
     private Boolean randomizeOrder = false;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "test_groups",
-            joinColumns = @JoinColumn(name = "test_id"),
-            inverseJoinColumns = @JoinColumn(name = "group_id")
-    )
     @Builder.Default
     private List<StudentGroup> assignedGroups = new ArrayList<>();
 
-    @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @OrderBy("orderNumber ASC")
     @Builder.Default
     private List<Assignment> assignments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<TestAttempt> attempts = new ArrayList<>();
 

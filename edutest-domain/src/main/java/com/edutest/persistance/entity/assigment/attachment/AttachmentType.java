@@ -1,4 +1,4 @@
-package com.edutest.persistance.entity.test;
+package com.edutest.persistance.entity.assigment.attachment;
 
 import java.util.Arrays;
 import java.util.List;

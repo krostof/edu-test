@@ -1,6 +1,7 @@
 package com.edutest.persistance.entity.test;
 
 
+import com.edutest.persistance.entity.assigment.coding.TestCase;
 import com.edutest.persistance.entity.code.CodeSubmission;
 import com.edutest.persistance.entity.common.BaseEntity;
 import jakarta.persistence.*;

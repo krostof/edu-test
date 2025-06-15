@@ -1,5 +1,6 @@
-package com.edutest.persistance.entity.test;
+package com.edutest.persistance.entity.assigment.common;
 
+import com.edutest.persistance.entity.assigment.Assignment;
 import com.edutest.persistance.entity.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;

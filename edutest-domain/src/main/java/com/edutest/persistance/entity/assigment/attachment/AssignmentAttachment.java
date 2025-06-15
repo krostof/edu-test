@@ -1,6 +1,7 @@
-package com.edutest.persistance.entity.test;
+package com.edutest.persistance.entity.assigment.attachment;
 
 
+import com.edutest.persistance.entity.assigment.Assignment;
 import com.edutest.persistance.entity.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -40,7 +41,6 @@ public class AssignmentAttachment extends BaseEntity {
     @Column(name = "description", length = 500)
     private String description;
 
-    // Business methods
     public String getFileExtension() {
         if (originalFilename == null || !originalFilename.contains(".")) {
             return "";
@@ -54,10 +54,6 @@ public class AssignmentAttachment extends BaseEntity {
 
     public boolean isDocument() {
         return AttachmentType.DOCUMENT.equals(attachmentType);
-    }
-
-    public boolean isVideo() {
-        return AttachmentType.VIDEO.equals(attachmentType);
     }
 
     public String getFileSizeFormatted() {

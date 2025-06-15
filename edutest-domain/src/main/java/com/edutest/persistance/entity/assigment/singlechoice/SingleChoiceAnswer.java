@@ -1,6 +1,8 @@
-package com.edutest.persistance.entity.test;
+package com.edutest.persistance.entity.assigment.singlechoice;
 
 
+import com.edutest.persistance.entity.assigment.common.AssignmentAnswer;
+import com.edutest.persistance.entity.assigment.common.ChoiceOption;
 import jakarta.persistence.*;
 import lombok.*;
 
