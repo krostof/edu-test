@@ -1,0 +1,72 @@
+package com.edutest.persistance.entity.assigment.attachment;
+
+
+import com.edutest.persistance.entity.assigment.AssignmentEntity;
+import com.edutest.persistance.entity.common.BaseEntity;
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "assignment_attachments")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class AssignmentAttachmentEntity extends BaseEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assignment_id", nullable = false)
+    private AssignmentEntity assignmentEntity;
+
+    @Column(name = "filename", nullable = false, length = 255)
+    private String filename;
+
+    @Column(name = "original_filename", nullable = false, length = 255)
+    private String originalFilename;
+
+    @Column(name = "file_path", nullable = false, length = 500)
+    private String filePath;
+
+    @Column(name = "file_size", nullable = false)
+    private Long fileSize;
+
+    @Column(name = "mime_type", length = 100)
+    private String mimeType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "attachment_type", nullable = false)
+    private AttachmentTypeEntity attachmentTypeEntity;
+
+    @Column(name = "description", length = 500)
+    private String description;
+
+    public String getFileExtension() {
+        if (originalFilename == null || !originalFilename.contains(".")) {
+            return "";
+        }
+        return originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
+    }
+
+    public boolean isImage() {
+        return AttachmentTypeEntity.IMAGE.equals(attachmentTypeEntity);
+    }
+
+    public boolean isDocument() {
+        return AttachmentTypeEntity.DOCUMENT.equals(attachmentTypeEntity);
+    }
+
+    public String getFileSizeFormatted() {
+        if (fileSize == null) {
+            return "Unknown";
+        }
+
+        if (fileSize < 1024) {
+            return fileSize + " B";
+        } else if (fileSize < 1024 * 1024) {
+            return String.format("%.1f KB", fileSize / 1024.0);
+        } else {
+            return String.format("%.1f MB", fileSize / (1024.0 * 1024.0));
+        }
+    }
+}

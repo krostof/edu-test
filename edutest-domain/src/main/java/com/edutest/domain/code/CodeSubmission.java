@@ -1,69 +1,41 @@
 package com.edutest.domain.code;
 
 
-import com.edutest.domain.assignment.coding.CodingAssignment;
-import com.edutest.domain.test.TestAttempt;
-import com.edutest.domain.user.User;
-import jakarta.persistence.*;
+import com.edutest.persistance.entity.code.CompilationStatusEnum;
+import com.edutest.persistance.entity.code.ExecutionStatusEnum;
+import com.edutest.persistance.entity.test.TestCaseResultEntity;
 import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Table(name = "code_submissions")
-@Getter
-@Setter
+@Data
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class CodeSubmission extends BaseEntity {
+public class CodeSubmission {
 
-    private CodingAssignment assignment;
-
-    private TestAttempt testAttempt;
-
-    private User student;
+    private Long id;
+    private Long assignmentId;
+    private Long testAttemptId;
+    private Long studentId;
 
     private String sourceCode;
-
     private String programmingLanguage;
-
     private LocalDateTime submittedAt;
 
-    @Enumerated(EnumType.STRING)
     private CompilationStatus compilationStatus;
-
     private String compilationError;
-
-    @Enumerated(EnumType.STRING)
     private ExecutionStatus executionStatus;
 
     private Float totalScore;
-
     private Long maxExecutionTimeMs;
-
     private Integer maxMemoryUsedMb;
 
     @Builder.Default
     private List<TestCaseResult> testCaseResults = new ArrayList<>();
 
-    @PrePersist
-    private void setSubmittedAt() {
-        if (submittedAt == null) {
-            submittedAt = LocalDateTime.now();
-        }
-    }
-
-    @PrePersist
-    @PreUpdate
-    private void validateStudent() {
-        if (student != null && !student.isStudent()) {
-            throw new IllegalStateException("Only students can submit code");
-        }
-    }
-
-    // Business methods
     public boolean isCompiled() {
         return CompilationStatus.SUCCESS.equals(compilationStatus);
     }
@@ -78,7 +50,7 @@ public class CodeSubmission extends BaseEntity {
 
     public int getPassedTestCases() {
         return (int) testCaseResults.stream()
-                .filter(TestCaseResult::isPassed)
+                .filter(TestCaseResult::isPassed)  // ✅ Domain method
                 .count();
     }
 
@@ -91,13 +63,6 @@ public class CodeSubmission extends BaseEntity {
             return 0.0f;
         }
         return (float) getPassedTestCases() / getTotalTestCases() * 100.0f;
-    }
-
-    public void addTestCaseResult(TestCaseResult result) {
-        if (result != null) {
-            result.setSubmission(this);
-            testCaseResults.add(result);
-        }
     }
 
     public boolean isSuccessful() {
@@ -117,5 +82,29 @@ public class CodeSubmission extends BaseEntity {
             return String.format("Passed %d/%d tests (%.1f%%)",
                     getPassedTestCases(), getTotalTestCases(), getPassingPercentage());
         }
+    }
+
+    public boolean hasAnswer() {
+        return sourceCode != null && !sourceCode.trim().isEmpty();
+    }
+
+    public boolean hasTimeLimit() {
+        return maxExecutionTimeMs != null && maxExecutionTimeMs > 0;
+    }
+
+    public boolean hasMemoryLimit() {
+        return maxMemoryUsedMb != null && maxMemoryUsedMb > 0;
+    }
+
+    public boolean exceedsTimeLimit() {
+        return hasTimeLimit() && maxExecutionTimeMs != null &&
+                testCaseResults.stream()
+                        .anyMatch(result -> result.getExecutionTimeMs() > maxExecutionTimeMs);
+    }
+
+    public boolean exceedsMemoryLimit() {
+        return hasMemoryLimit() && maxMemoryUsedMb != null &&
+                testCaseResults.stream()
+                        .anyMatch(result -> result.getMemoryUsedMb() > maxMemoryUsedMb);
     }
 }

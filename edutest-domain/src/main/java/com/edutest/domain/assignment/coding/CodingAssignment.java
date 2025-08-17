@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class CodingAssignment extends Assignment {
@@ -21,7 +22,9 @@ public class CodingAssignment extends Assignment {
     private String allowedLanguages;
     private String starterCode;
     private String solutionTemplate;
-    private List<TestCase> testCases;
+
+    @Builder.Default
+    private List<TestCase> testCases = List.of();
 
     @Builder(builderMethodName = "codingBuilder")
     public CodingAssignment(Long id, Long testId, String title, String description,
@@ -62,48 +65,12 @@ public class CodingAssignment extends Assignment {
         if (validation.hasError()) {
             return 0.0f;
         }
-
         return 0.0f;
     }
 
     @Override
     public boolean supportsAttachments() {
         return false;
-    }
-
-    // Business methods for allowed languages
-    public List<String> getAllowedLanguagesList() {
-        if (allowedLanguages == null || allowedLanguages.isEmpty()) {
-            return List.of();
-        }
-        return Arrays.asList(allowedLanguages.split(","));
-    }
-
-    public void setAllowedLanguagesList(List<String> languages) {
-        if (languages == null || languages.isEmpty()) {
-            this.allowedLanguages = null;
-        } else {
-            this.allowedLanguages = String.join(",", languages);
-        }
-        setUpdatedAt(LocalDateTime.now());
-    }
-
-    public boolean isLanguageAllowed(String language) {
-        return getAllowedLanguagesList().contains(language);
-    }
-
-    public void addAllowedLanguage(String language) {
-        List<String> current = new java.util.ArrayList<>(getAllowedLanguagesList());
-        if (!current.contains(language)) {
-            current.add(language);
-            setAllowedLanguagesList(current);
-        }
-    }
-
-    public void removeAllowedLanguage(String language) {
-        List<String> current = new java.util.ArrayList<>(getAllowedLanguagesList());
-        current.remove(language);
-        setAllowedLanguagesList(current);
     }
 
     public boolean hasTimeLimit() {
@@ -127,7 +94,18 @@ public class CodingAssignment extends Assignment {
     }
 
     public int getTestCasesCount() {
-        return testCases != null ? testCases.size() : 0;
+        return testCases.size();
+    }
+
+    public List<String> getAllowedLanguagesList() {
+        if (allowedLanguages == null || allowedLanguages.isEmpty()) {
+            return List.of();
+        }
+        return Arrays.asList(allowedLanguages.split(","));
+    }
+
+    public boolean isLanguageAllowed(String language) {
+        return getAllowedLanguagesList().contains(language);
     }
 
     public List<TestCase> getPublicTestCases() {
@@ -142,12 +120,16 @@ public class CodingAssignment extends Assignment {
                 .collect(Collectors.toList());
     }
 
-
-    public void setTestCases(List<TestCase> newTestCases) {
-        this.testCases = newTestCases != null ? List.copyOf(newTestCases) : List.of();
-        setUpdatedAt(LocalDateTime.now());
+    public TestCase findTestCaseById(Long testCaseId) {
+        return testCases.stream()
+                .filter(tc -> tc.getId().equals(testCaseId))
+                .findFirst()
+                .orElse(null);
     }
 
-
-
+    public boolean isExecutionWithinLimits(long executionTimeMs, int memoryUsedMb) {
+        boolean timeOk = !hasTimeLimit() || executionTimeMs <= timeLimitMs;
+        boolean memoryOk = !hasMemoryLimit() || memoryUsedMb <= memoryLimitMb;
+        return timeOk && memoryOk;
+    }
 }

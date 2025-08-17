@@ -11,17 +11,22 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Builder(toBuilder = true)  // Dla immutable operations
 @NoArgsConstructor
 @AllArgsConstructor
 public class SingleChoiceAssignment extends Assignment {
 
-    private List<ChoiceOption> options;
-    private boolean randomizeOptions;
+    @Builder.Default
+    private List<ChoiceOption> options = List.of();
+
+    @Builder.Default
+    private boolean randomizeOptions = false;
 
     @Builder(builderMethodName = "singleChoiceBuilder")
     public SingleChoiceAssignment(Long id, Long testId, String title, String description,
                                   Integer orderNumber, Integer points, LocalDateTime createdAt,
-                                  LocalDateTime updatedAt, List<ChoiceOption> options, boolean randomizeOptions) {
+                                  LocalDateTime updatedAt, List<ChoiceOption> options,
+                                  boolean randomizeOptions) {
         super(id, testId, title, description, orderNumber, points, createdAt, updatedAt);
         this.options = options != null ? List.copyOf(options) : List.of();
         this.randomizeOptions = randomizeOptions;
@@ -76,31 +81,6 @@ public class SingleChoiceAssignment extends Assignment {
         return true;
     }
 
-    // Business methods
-    public void addOption(ChoiceOption option) {
-        if (option == null) {
-            throw new IllegalArgumentException("Option cannot be null");
-        }
-
-        this.options = new java.util.ArrayList<>(options);
-        this.options.add(option);
-        setUpdatedAt(LocalDateTime.now());
-    }
-
-    public void removeOption(Long optionId) {
-        this.options = options.stream()
-                .filter(option -> !option.getId().equals(optionId))
-                .collect(java.util.stream.Collectors.toList());
-        setUpdatedAt(LocalDateTime.now());
-    }
-
-    public void updateOption(Long optionId, ChoiceOption newOption) {
-        this.options = options.stream()
-                .map(option -> option.getId().equals(optionId) ? newOption : option)
-                .collect(java.util.stream.Collectors.toList());
-        setUpdatedAt(LocalDateTime.now());
-    }
-
     public ChoiceOption getCorrectOption() {
         return options.stream()
                 .filter(ChoiceOption::isCorrect)
@@ -127,29 +107,5 @@ public class SingleChoiceAssignment extends Assignment {
                 .filter(option -> option.getId().equals(optionId))
                 .findFirst()
                 .orElse(null);
-    }
-
-    public void setOptions(List<ChoiceOption> newOptions) {
-        this.options = newOptions != null ? List.copyOf(newOptions) : List.of();
-        setUpdatedAt(LocalDateTime.now());
-        validateSingleChoice();
-    }
-
-    private void validateSingleChoice() {
-        if (options == null || options.isEmpty()) {
-            return; // Skip validation during construction
-        }
-
-        long correctCount = options.stream()
-                .filter(ChoiceOption::isCorrect)
-                .count();
-
-        if (correctCount != 1) {
-            throw new IllegalStateException("Single choice assignment must have exactly one correct answer");
-        }
-
-        if (options.size() < 2) {
-            throw new IllegalStateException("Single choice assignment must have at least 2 options");
-        }
     }
 }

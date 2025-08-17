@@ -17,10 +17,6 @@ public class TestCaseExecutionResult {
     private long executionTimeMs;
     private int memoryUsedMb;
 
-    public boolean isPassed() {
-        return passed;
-    }
-
     public boolean hasError() {
         return errorMessage != null && !errorMessage.trim().isEmpty();
     }

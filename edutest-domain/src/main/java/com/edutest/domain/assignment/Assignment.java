@@ -1,5 +1,6 @@
 package com.edutest.domain.assignment;
 
+import com.edutest.domain.assignment.coding.CodingAssignment;
 import com.edutest.domain.test.Test;
 import lombok.*;
 import java.time.LocalDateTime;

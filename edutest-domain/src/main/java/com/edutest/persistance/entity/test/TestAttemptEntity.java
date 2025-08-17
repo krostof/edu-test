@@ -1,31 +1,42 @@
-package com.edutest.domain.test;
+package com.edutest.persistance.entity.test;
 
 
-import com.edutest.domain.user.User;
 import com.edutest.persistance.entity.common.BaseEntity;
+import com.edutest.persistance.entity.user.UserEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
+@Entity
+@Table(name = "test_attempts",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"test_id", "student_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TestAttempt extends BaseEntity {
+public class TestAttemptEntity extends BaseEntity {
 
-    private Test test;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "test_id", nullable = false)
+    private TestEntity testEntity;
 
-    private User student;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "student_id", nullable = false)
+    private UserEntity student;
 
+    @Column(name = "started_at", nullable = false)
     private LocalDateTime startedAt;
 
+    @Column(name = "finished_at")
     private LocalDateTime finishedAt;
 
+    @Column(name = "score")
     private Float score;
 
+    @Column(name = "is_completed", nullable = false)
     @Builder.Default
     private Boolean isCompleted = false;
 
@@ -36,6 +47,7 @@ public class TestAttempt extends BaseEntity {
         }
     }
 
+    // Business methods
     public boolean isInProgress() {
         return !isCompleted && startedAt != null && finishedAt == null;
     }
@@ -54,17 +66,17 @@ public class TestAttempt extends BaseEntity {
     }
 
     public long getRemainingTimeInMinutes() {
-        if (test.getTimeLimit() == null || startedAt == null) {
-            return Long.MAX_VALUE;
+        if (testEntity.getTimeLimit() == null || startedAt == null) {
+            return Long.MAX_VALUE; // Brak limitu czasowego
         }
 
         long elapsed = getElapsedTimeInMinutes();
-        long remaining = test.getTimeLimit() - elapsed;
+        long remaining = testEntity.getTimeLimit() - elapsed;
         return Math.max(0, remaining);
     }
 
     public boolean isTimeExpired() {
-        if (test.getTimeLimit() == null) {
+        if (testEntity.getTimeLimit() == null) {
             return false;
         }
 

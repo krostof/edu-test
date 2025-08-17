@@ -73,7 +73,6 @@ public abstract class AssignmentAnswer {
         return score != null && score == 0.0f;
     }
 
-    // Timing methods
     public boolean hasBeenAnswered() {
         return answeredAt != null;
     }
