@@ -32,7 +32,7 @@ public class OpenQuestionAssignment extends Assignment {
         return AssignmentType.OPEN_QUESTION;
     }
 
-    @Override
+
     public boolean isValidAnswer(String answer) {
         if (answer == null) {
             return false;
