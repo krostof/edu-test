@@ -1,5 +1,8 @@
 package com.edutest.persistance.entity.code;
 
+import lombok.Getter;
+
+@Getter
 public enum CompilationStatus {
     NOT_COMPILED("Not Compiled"),
     SUCCESS("Compilation Successful"),
@@ -10,10 +13,6 @@ public enum CompilationStatus {
 
     CompilationStatus(String displayName) {
         this.displayName = displayName;
-    }
-
-    public String getDisplayName() {
-        return displayName;
     }
 
     public boolean isSuccessful() {

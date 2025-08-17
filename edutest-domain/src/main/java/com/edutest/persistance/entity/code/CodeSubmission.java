@@ -67,7 +67,6 @@ public class CodeSubmission extends BaseEntity {
     @Builder.Default
     private List<TestCaseResult> testCaseResults = new ArrayList<>();
 
-    @PrePersist
     private void setSubmittedAt() {
         if (submittedAt == null) {
             submittedAt = LocalDateTime.now();

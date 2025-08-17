@@ -3,9 +3,6 @@ package com.edutest.domain.assignment.common;
 import lombok.*;
 import java.time.LocalDateTime;
 
-/**
- * Bazowa klasa domain model dla odpowiedzi na zadania
- */
 @Data
 @Builder
 @NoArgsConstructor
@@ -21,7 +18,6 @@ public abstract class AssignmentAnswer {
     private boolean graded;
     private String teacherFeedback;
 
-    // Abstract methods do implementacji w podklasach
     public abstract boolean isCorrect();
     public abstract Float calculateScore(Integer maxPoints);
     public abstract String getAnswerText();
@@ -29,7 +25,6 @@ public abstract class AssignmentAnswer {
     public abstract boolean isValidAnswer();
     public abstract String getValidationError();
 
-    // Business methods
     public boolean isGraded() {
         return graded;
     }

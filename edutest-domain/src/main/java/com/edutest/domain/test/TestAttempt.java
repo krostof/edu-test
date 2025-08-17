@@ -2,6 +2,7 @@ package com.edutest.domain.test;
 
 
 import com.edutest.domain.user.User;
+import com.edutest.persistance.entity.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 

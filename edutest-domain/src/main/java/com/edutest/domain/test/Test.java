@@ -1,9 +1,9 @@
 package com.edutest.domain.test;
 
-
 import com.edutest.domain.assignment.Assignment;
 import com.edutest.domain.group.StudentGroup;
 import com.edutest.domain.user.User;
+import com.edutest.domain.common.DomainEntity;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -15,7 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Test extends BaseEntity {
+public class Test extends DomainEntity {
 
     private String title;
 
@@ -25,7 +25,7 @@ public class Test extends BaseEntity {
 
     private LocalDateTime endDate;
 
-    private Integer timeLimit; // w minutach
+    private Integer timeLimit;
 
     @Builder.Default
     private Boolean allowNavigation = true;

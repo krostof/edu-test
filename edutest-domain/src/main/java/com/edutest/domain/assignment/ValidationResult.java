@@ -2,9 +2,6 @@ package com.edutest.domain.assignment;
 
 import lombok.*;
 
-/**
- * Prosta klasa do przechowywania wyników walidacji
- */
 @Data
 @Builder
 @NoArgsConstructor

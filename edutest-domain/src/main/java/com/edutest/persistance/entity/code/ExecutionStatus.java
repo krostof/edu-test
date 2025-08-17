@@ -1,5 +1,8 @@
 package com.edutest.persistance.entity.code;
 
+import lombok.Getter;
+
+@Getter
 public enum ExecutionStatus {
     NOT_EXECUTED("Not Executed"),
     SUCCESS("Execution Successful"),
@@ -12,10 +15,6 @@ public enum ExecutionStatus {
 
     ExecutionStatus(String displayName) {
         this.displayName = displayName;
-    }
-
-    public String getDisplayName() {
-        return displayName;
     }
 
     public boolean isSuccessful() {

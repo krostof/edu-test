@@ -1,11 +1,9 @@
 package com.edutest.domain.assignment;
 
+import com.edutest.domain.test.Test;
 import lombok.*;
 import java.time.LocalDateTime;
 
-/**
- * Bazowy domain model dla zadania - uproszczony bez Value Objects
- */
 @Data
 @Builder
 @NoArgsConstructor
@@ -21,13 +19,11 @@ public abstract class Assignment {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // Abstract methods dla różnych typów zadań
     public abstract AssignmentType getType();
     public abstract ValidationResult validateAnswer(String answer);
     public abstract Float calculateScore(String answer);
     public abstract boolean supportsAttachments();
 
-    // Business methods
     public boolean hasValidPoints() {
         return points != null && points > 0;
     }
@@ -47,7 +43,6 @@ public abstract class Assignment {
         return (score / points) * 100.0f;
     }
 
-    // Manual update methods zamiast @With
     public void updateTitle(String newTitle) {
         this.title = newTitle;
         this.updatedAt = LocalDateTime.now();
@@ -60,6 +55,15 @@ public abstract class Assignment {
 
     public void updatePoints(Integer newPoints) {
         this.points = newPoints;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void setTest(Test test) {
+        if (test != null) {
+            this.testId = test.getId();
+        } else {
+            this.testId = null;
+        }
         this.updatedAt = LocalDateTime.now();
     }
 }

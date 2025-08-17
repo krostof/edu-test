@@ -35,10 +35,6 @@ public class ChoiceOption {
                 .build();
     }
 
-    public boolean isCorrect() {
-        return correct;
-    }
-
     public boolean hasExplanation() {
         return explanation != null && !explanation.trim().isEmpty();
     }
@@ -67,7 +63,6 @@ public class ChoiceOption {
         return withOrderNumber(newOrder);
     }
 
-    // Validation
     public boolean isValid() {
         return optionText != null &&
                 !optionText.trim().isEmpty() &&

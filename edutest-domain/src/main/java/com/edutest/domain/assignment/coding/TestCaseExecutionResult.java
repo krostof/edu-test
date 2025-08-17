@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-class TestCaseExecutionResult {
+public class TestCaseExecutionResult {
     private Long testCaseId;
     private boolean passed;
     private String actualOutput;

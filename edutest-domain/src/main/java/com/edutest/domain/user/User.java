@@ -1,5 +1,7 @@
 package com.edutest.domain.user;
 
+import com.edutest.persistance.entity.common.BaseEntity;
+import com.edutest.persistance.entity.user.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
 

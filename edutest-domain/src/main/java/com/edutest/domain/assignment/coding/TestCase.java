@@ -1,6 +1,5 @@
 package com.edutest.domain.assignment.coding;
 
-
 import lombok.*;
 
 @Getter
@@ -8,12 +7,11 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TestCase{
+public class TestCase {
 
+    private Long id;
     private CodingAssignment assignment;
-
     private String inputData;
-
     private String expectedOutput;
 
     @Builder.Default

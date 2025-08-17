@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-class ScoringBreakdown {
+public class ScoringBreakdown {
     private int totalTestCases;
     private int passedTestCases;
     private int failedTestCases;

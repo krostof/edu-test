@@ -9,6 +9,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 
@@ -38,12 +39,7 @@ public class MultipleChoiceAnswer extends AssignmentAnswer {
             return false;
         }
 
-        // All selected must be correct
-        boolean allSelectedCorrect = selectedOptions.stream().allMatch(ChoiceOption::isCorrect);
-
-        // We need context of the assignment to know if we selected ALL correct options
-        // This will be determined in autoGrade() method with assignment context
-        return allSelectedCorrect;
+        return selectedOptions.stream().allMatch(ChoiceOption::isCorrect);
     }
 
     @Override
@@ -200,7 +196,7 @@ public class MultipleChoiceAnswer extends AssignmentAnswer {
         if (selectedOptions.isEmpty() && !selectedOptionIds.isEmpty()) {
             selectedOptions = selectedOptionIds.stream()
                     .map(assignment::findOptionById)
-                    .filter(option -> option != null)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
         }
 
