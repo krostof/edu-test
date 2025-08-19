@@ -14,7 +14,6 @@ public class MultipleChoiceAnswerService {
             return false;
         }
 
-        // All selected must be correct AND all correct must be selected
         boolean allSelectedCorrect = selectedOptions.stream().allMatch(ChoiceOption::isCorrect);
         boolean allCorrectSelected = correctOptions.size() == selectedOptions.stream()
                 .mapToLong(option -> correctOptions.stream()
@@ -62,7 +61,7 @@ public class MultipleChoiceAnswerService {
         List<ChoiceOption> missedCorrect = correctOptions.stream()
                 .filter(option -> selectedOptions.stream()
                         .noneMatch(selected -> selected.getId().equals(option.getId())))
-                .collect(Collectors.toList());
+                .toList();
 
         return SelectionAnalysis.builder()
                 .totalSelected(selectedOptions.size())
@@ -71,7 +70,7 @@ public class MultipleChoiceAnswerService {
                 .totalCorrectAvailable(correctOptions.size())
                 .missedCorrect(missedCorrect.size())
                 .isPerfect(correctSelections.size() == correctOptions.size() && incorrectSelections.isEmpty())
-                .hasErrors(incorrectSelections.size() > 0 || missedCorrect.size() > 0)
+                .hasErrors(!incorrectSelections.isEmpty() || !missedCorrect.isEmpty())
                 .accuracyPercentage(calculateAccuracyPercentage(selectedOptions))
                 .build();
     }

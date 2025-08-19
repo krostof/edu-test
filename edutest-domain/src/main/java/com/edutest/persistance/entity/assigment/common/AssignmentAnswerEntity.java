@@ -59,12 +59,10 @@ public abstract class AssignmentAnswerEntity extends BaseEntity {
         }
     }
 
-    // Abstract methods to be implemented by subclasses
     public abstract boolean isCorrect();
     public abstract float calculateScore();
     public abstract String getAnswerText();
 
-    // Business methods
     public void grade(float score, String feedback) {
         this.score = score;
         this.teacherFeedback = feedback;

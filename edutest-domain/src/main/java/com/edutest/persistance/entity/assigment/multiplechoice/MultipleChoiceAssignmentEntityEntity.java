@@ -71,12 +71,10 @@ public class MultipleChoiceAssignmentEntityEntity extends AssignmentEntity {
                     .collect(Collectors.toList());
 
             if (!partialScoring) {
-                // All or nothing scoring
                 boolean allCorrect = selectedOptions.size() == correctOptions.size() &&
                         selectedOptions.stream().allMatch(ChoiceOptionEntity::isCorrectAnswer);
                 return allCorrect ? getPoints() : 0.0f;
             } else {
-                // Partial scoring
                 return calculatePartialScore(selectedOptions, correctOptions);
             }
         } catch (Exception e) {
@@ -90,12 +88,10 @@ public class MultipleChoiceAssignmentEntityEntity extends AssignmentEntity {
             return 0.0f;
         }
 
-        // Count correct selections
         long correctSelections = selectedOptions.stream()
                 .filter(ChoiceOptionEntity::isCorrectAnswer)
                 .count();
 
-        // Count wrong selections
         long wrongSelections = selectedOptions.stream()
                 .filter(option -> !option.isCorrectAnswer())
                 .count();
@@ -103,7 +99,6 @@ public class MultipleChoiceAssignmentEntityEntity extends AssignmentEntity {
         float score = (float) correctSelections / correctCount;
 
         if (penaltyForWrong) {
-            // Subtract points for wrong answers
             float penalty = (float) wrongSelections / options.size();
             score = Math.max(0, score - penalty);
         }
@@ -112,7 +107,6 @@ public class MultipleChoiceAssignmentEntityEntity extends AssignmentEntity {
     }
 
     private List<Long> parseSelectedOptions(String answer) {
-        // Format: "1,3,5" - comma separated option IDs
         return Arrays.stream(answer.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
@@ -120,7 +114,6 @@ public class MultipleChoiceAssignmentEntityEntity extends AssignmentEntity {
                 .collect(Collectors.toList());
     }
 
-    // Business methods
     public void addOption(String optionText, boolean isCorrect) {
         addOption(optionText, isCorrect, null);
     }

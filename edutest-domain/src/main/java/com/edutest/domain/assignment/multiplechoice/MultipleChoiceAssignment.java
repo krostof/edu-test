@@ -23,8 +23,8 @@ public class MultipleChoiceAssignment extends Assignment {
 
     private List<ChoiceOption> options;
     private boolean randomizeOptions;
-    private boolean partialScoring;      // Czy naliczać punkty częściowe
-    private boolean penaltyForWrong;     // Czy odejmować punkty za złe odpowiedzi
+    private boolean partialScoring;
+    private boolean penaltyForWrong;
 
     @Builder(builderMethodName = "multipleChoiceBuilder")
     public MultipleChoiceAssignment(Long id, Long testId, String title, String description,
@@ -81,12 +81,10 @@ public class MultipleChoiceAssignment extends Assignment {
                     .collect(Collectors.toList());
 
             if (!partialScoring) {
-                // All or nothing scoring
                 boolean allCorrect = selectedOptions.size() == correctOptions.size() &&
                         selectedOptions.stream().allMatch(ChoiceOption::isCorrect);
                 return allCorrect ? getPoints().floatValue() : 0.0f;
             } else {
-                // Partial scoring
                 return calculatePartialScore(selectedOptions, correctOptions);
             }
         } catch (Exception e) {
@@ -99,19 +97,16 @@ public class MultipleChoiceAssignment extends Assignment {
         return true;
     }
 
-    // Business methods
     private Float calculatePartialScore(List<ChoiceOption> selectedOptions, List<ChoiceOption> correctOptions) {
         int correctCount = correctOptions.size();
         if (correctCount == 0) {
             return 0.0f;
         }
 
-        // Count correct selections
         long correctSelections = selectedOptions.stream()
                 .filter(ChoiceOption::isCorrect)
                 .count();
 
-        // Count wrong selections
         long wrongSelections = selectedOptions.stream()
                 .filter(option -> !option.isCorrect())
                 .count();
@@ -119,7 +114,6 @@ public class MultipleChoiceAssignment extends Assignment {
         float score = (float) correctSelections / correctCount;
 
         if (penaltyForWrong) {
-            // Subtract points for wrong answers
             float penalty = (float) wrongSelections / options.size();
             score = Math.max(0, score - penalty);
         }
@@ -128,7 +122,6 @@ public class MultipleChoiceAssignment extends Assignment {
     }
 
     private List<Long> parseSelectedOptions(String answer) {
-        // Format: "1,3,5" - comma separated option IDs
         return Arrays.stream(answer.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
@@ -218,7 +211,6 @@ public class MultipleChoiceAssignment extends Assignment {
         setUpdatedAt(LocalDateTime.now());
     }
 
-    // Validation
     public ValidationResult validateConfiguration() {
         if (!hasCorrectAnswers()) {
             return ValidationResult.invalid("Multiple choice assignment must have at least one correct answer");
@@ -237,7 +229,7 @@ public class MultipleChoiceAssignment extends Assignment {
 
     private void validateMultipleChoice() {
         if (options == null || options.isEmpty()) {
-            return; // Skip validation during construction
+            return;
         }
 
         ValidationResult result = validateConfiguration();
@@ -246,7 +238,6 @@ public class MultipleChoiceAssignment extends Assignment {
         }
     }
 
-    // Scoring analysis
     public ScoringAnalysis analyzeScoringImpact(List<Long> selectedIds) {
         List<ChoiceOption> selectedOptions = options.stream()
                 .filter(option -> selectedIds.contains(option.getId()))

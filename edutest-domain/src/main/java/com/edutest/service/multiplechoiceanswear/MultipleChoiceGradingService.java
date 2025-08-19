@@ -23,7 +23,6 @@ public class MultipleChoiceGradingService {
                                           MultipleChoiceAssignment assignment,
                                           List<ChoiceOption> allOptions) {
 
-        // Znajdź wybrane opcje na podstawie ID
         List<ChoiceOption> selectedOptions = answer.getSelectedOptionIds().stream()
                 .map(id -> findOptionById(allOptions, id))
                 .filter(Objects::nonNull)

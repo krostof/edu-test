@@ -18,14 +18,12 @@ public class OpenQuestionAnswerFacade {
         this.statusFactory = statusFactory;
     }
 
-    // Implementacja abstract methods z AssignmentAnswer
     public boolean isCorrect(OpenQuestionAnswer answer) {
         return answerService.isCorrect(answer);
     }
 
     public Float calculateScore(OpenQuestionAnswer answer, Integer maxPoints) {
-        // Open questions typically need manual grading
-        return answer.getScore(); // Return existing score
+        return answer.getScore();
     }
 
     public String getAnswerText(OpenQuestionAnswer answer) {

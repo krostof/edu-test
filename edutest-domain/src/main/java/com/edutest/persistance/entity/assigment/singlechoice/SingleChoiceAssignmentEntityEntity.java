@@ -69,7 +69,6 @@ public class SingleChoiceAssignmentEntityEntity extends AssignmentEntity {
         return 0.0f;
     }
 
-    // Business methods
     public void addOption(String optionText, boolean isCorrect) {
         addOption(optionText, isCorrect, null);
     }

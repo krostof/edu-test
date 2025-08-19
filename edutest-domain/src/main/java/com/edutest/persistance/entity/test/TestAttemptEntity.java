@@ -47,7 +47,6 @@ public class TestAttemptEntity extends BaseEntity {
         }
     }
 
-    // Business methods
     public boolean isInProgress() {
         return !isCompleted && startedAt != null && finishedAt == null;
     }
@@ -67,7 +66,7 @@ public class TestAttemptEntity extends BaseEntity {
 
     public long getRemainingTimeInMinutes() {
         if (testEntity.getTimeLimit() == null || startedAt == null) {
-            return Long.MAX_VALUE; // Brak limitu czasowego
+            return Long.MAX_VALUE;
         }
 
         long elapsed = getElapsedTimeInMinutes();

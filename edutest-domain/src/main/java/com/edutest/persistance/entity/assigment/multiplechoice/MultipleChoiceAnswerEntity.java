@@ -30,7 +30,6 @@ public class MultipleChoiceAnswerEntity extends AssignmentAnswerEntity {
         MultipleChoiceAssignmentEntityEntity assignment = (MultipleChoiceAssignmentEntityEntity) getAssignmentEntity();
         List<ChoiceOptionEntity> correctOptions = assignment.getCorrectOptions();
 
-        // Check if selected options match exactly with correct options
         return selectedOptions.size() == correctOptions.size() &&
                 selectedOptions.stream().allMatch(ChoiceOptionEntity::isCorrectAnswer);
     }
@@ -39,7 +38,6 @@ public class MultipleChoiceAnswerEntity extends AssignmentAnswerEntity {
     public float calculateScore() {
         MultipleChoiceAssignmentEntityEntity assignment = (MultipleChoiceAssignmentEntityEntity) getAssignmentEntity();
 
-        // Convert selected options to comma-separated string format expected by assignment
         String answerString = selectedOptions.stream()
                 .map(option -> option.getId().toString())
                 .collect(Collectors.joining(","));
@@ -54,7 +52,6 @@ public class MultipleChoiceAnswerEntity extends AssignmentAnswerEntity {
                 .collect(Collectors.joining("; "));
     }
 
-    // Business methods
     public void addSelectedOption(ChoiceOptionEntity option) {
         if (option != null && !selectedOptions.contains(option)) {
             selectedOptions.add(option);

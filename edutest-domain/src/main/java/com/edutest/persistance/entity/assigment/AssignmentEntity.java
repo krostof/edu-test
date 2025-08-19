@@ -31,12 +31,9 @@ public abstract class AssignmentEntity extends BaseEntity {
     @JoinColumn(name = "test_id", nullable = false)
     private TestEntity testEntity;
 
-    // Metoda abstrakcyjna do określenia typu zadania
     public abstract AssignmentType getType();
 
-    // Metoda do walidacji odpowiedzi (implementowana w podklasach)
     public abstract boolean isValidAnswer(String answer);
 
-    // Metoda do obliczania punktów za odpowiedź (implementowana w podklasach)
     public abstract float calculateScore(String answer);
 }

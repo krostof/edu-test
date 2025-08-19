@@ -90,7 +90,6 @@ public abstract class AssignmentAnswer {
         return java.time.Duration.between(answeredAt, LocalDateTime.now()).toMinutes();
     }
 
-    // Validation for base class
     public boolean isComplete() {
         return hasAnswer() && isValidAnswer();
     }

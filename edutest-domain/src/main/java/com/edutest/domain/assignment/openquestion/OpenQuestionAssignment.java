@@ -40,35 +40,28 @@ public class OpenQuestionAssignment extends Assignment {
 
         String trimmedAnswer = answer.trim();
 
-        // Check minimum length
         if (minLength != null && trimmedAnswer.length() < minLength) {
             return false;
         }
 
-        // Check maximum length
         if (maxLength != null && trimmedAnswer.length() > maxLength) {
             return false;
         }
 
-        // At least some content is required
         return !trimmedAnswer.isEmpty();
     }
 
     @Override
     public float calculateScore(String answer) {
-        // Open questions require manual grading by default
-        // This method can be overridden for specific automatic scoring logic
 
         if (!isValidAnswer(answer)) {
             return 0.0f;
         }
 
-        // Basic automatic scoring - can be enhanced with keyword matching, etc.
         if (sampleAnswer != null && !sampleAnswer.trim().isEmpty()) {
             return calculateBasicSimilarityScore(answer, sampleAnswer);
         }
 
-        // Return full points if no sample answer - requires manual grading
         return getPoints();
     }
 
@@ -80,12 +73,10 @@ public class OpenQuestionAssignment extends Assignment {
         String student = caseSensitive ? studentAnswer.trim() : studentAnswer.trim().toLowerCase();
         String sample = caseSensitive ? sampleAnswer.trim() : sampleAnswer.trim().toLowerCase();
 
-        // Very basic similarity - exact match
         if (student.equals(sample)) {
             return getPoints();
         }
 
-        // Partial credit for containing key words (basic implementation)
         String[] sampleWords = sample.split("\\s+");
         String[] studentWords = student.split("\\s+");
 
@@ -107,9 +98,8 @@ public class OpenQuestionAssignment extends Assignment {
         return similarity * getPoints();
     }
 
-    // Business methods
     public boolean requiresManualGrading() {
-        return true; // Open questions typically need teacher review
+        return true;
     }
 
     public boolean hasLengthRestrictions() {
