@@ -24,7 +24,7 @@ public class SingleChoiceAssignment extends Assignment {
 
     @Builder(builderMethodName = "singleChoiceBuilder")
     public SingleChoiceAssignment(Long id, Long testId, String title, String description,
-                                  Integer orderNumber, Integer points, LocalDateTime createdAt,
+                                  Integer orderNumber, Float points, LocalDateTime createdAt,
                                   LocalDateTime updatedAt, List<ChoiceOption> options,
                                   boolean randomizeOptions) {
         super(id, testId, title, description, orderNumber, points, createdAt, updatedAt);

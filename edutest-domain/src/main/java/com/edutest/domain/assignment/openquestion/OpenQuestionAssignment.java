@@ -2,6 +2,7 @@ package com.edutest.domain.assignment.openquestion;
 
 import com.edutest.domain.assignment.Assignment;
 import com.edutest.domain.assignment.AssignmentType;
+import com.edutest.domain.assignment.ValidationResult;
 import jakarta.persistence.DiscriminatorValue;
 import lombok.*;
 
@@ -32,6 +33,11 @@ public class OpenQuestionAssignment extends Assignment {
         return AssignmentType.OPEN_QUESTION;
     }
 
+    @Override
+    public ValidationResult validateAnswer(String answer) {
+        return null;
+    }
+
 
     public boolean isValidAnswer(String answer) {
         if (answer == null) {
@@ -52,7 +58,7 @@ public class OpenQuestionAssignment extends Assignment {
     }
 
     @Override
-    public float calculateScore(String answer) {
+    public Float calculateScore(String answer) {
 
         if (!isValidAnswer(answer)) {
             return 0.0f;
@@ -63,6 +69,11 @@ public class OpenQuestionAssignment extends Assignment {
         }
 
         return getPoints();
+    }
+
+    @Override
+    public boolean supportsAttachments() {
+        return false;
     }
 
     private float calculateBasicSimilarityScore(String studentAnswer, String sampleAnswer) {

@@ -16,7 +16,7 @@ public abstract class Assignment {
     private String title;
     private String description;
     private Integer orderNumber;
-    private Integer points;
+    private Float points;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -54,7 +54,7 @@ public abstract class Assignment {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void updatePoints(Integer newPoints) {
+    public void updatePoints(Float newPoints) {
         this.points = newPoints;
         this.updatedAt = LocalDateTime.now();
     }
