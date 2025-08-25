@@ -96,4 +96,18 @@ public class TestAttempt extends BaseEntity {
             return "NOT_STARTED";
         }
     }
+
+    @Data
+    @AllArgsConstructor
+    public static class AttemptResult {
+        private boolean success;
+        private String message;
+        private TestAttempt attempt;
+
+        public AttemptResult(boolean success, String message) {
+            this.success = success;
+            this.message = message;
+            this.attempt = null;
+        }
+    }
 }
