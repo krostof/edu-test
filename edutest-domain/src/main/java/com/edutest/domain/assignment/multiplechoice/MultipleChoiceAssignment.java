@@ -28,7 +28,7 @@ public class MultipleChoiceAssignment extends Assignment {
 
     @Builder(builderMethodName = "multipleChoiceBuilder")
     public MultipleChoiceAssignment(Long id, Long testId, String title, String description,
-                                    Integer orderNumber, Integer points, LocalDateTime createdAt,
+                                    Integer orderNumber, Float points, LocalDateTime createdAt,
                                     LocalDateTime updatedAt, List<ChoiceOption> options,
                                     boolean randomizeOptions, boolean partialScoring, boolean penaltyForWrong) {
         super(id, testId, title, description, orderNumber, points, createdAt, updatedAt);

@@ -28,7 +28,7 @@ public class CodingAssignment extends Assignment {
 
     @Builder(builderMethodName = "codingBuilder")
     public CodingAssignment(Long id, Long testId, String title, String description,
-                            Integer orderNumber, Integer points, LocalDateTime createdAt,
+                            Integer orderNumber, Float points, LocalDateTime createdAt,
                             LocalDateTime updatedAt, Integer timeLimitMs, Integer memoryLimitMb,
                             String allowedLanguages, String starterCode, String solutionTemplate,
                             List<TestCase> testCases) {
