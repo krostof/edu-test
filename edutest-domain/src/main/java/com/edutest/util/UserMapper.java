@@ -27,8 +27,7 @@ public class UserMapper {
         userProfile.setEmail(entity.getEmail());
         userProfile.setFirstName(entity.getFirstName());
         userProfile.setLastName(entity.getLastName());
-        userProfile.setStudentNumber(entity.getStudentNumber());
-        userProfile.setActive(entity.getIsActive());
+        userProfile.setIsActive(entity.getIsActive());
         return userProfile;
     }
 
