@@ -6,7 +6,6 @@ import com.edutest.domain.assignment.ValidationResult;
 import jakarta.persistence.DiscriminatorValue;
 import lombok.*;
 
-@Builder
 @DiscriminatorValue("OPEN_QUESTION")
 @Getter
 @Setter
@@ -22,10 +21,8 @@ public class OpenQuestionAssignment extends Assignment {
 
     private String gradingRubric;
 
-    @Builder.Default
     private Boolean allowHtml = false;
 
-    @Builder.Default
     private Boolean caseSensitive = false;
 
     @Override

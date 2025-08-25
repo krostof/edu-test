@@ -9,7 +9,6 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Builder
 @Entity
 @Table(name = "assignment_answers")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -39,7 +38,6 @@ public abstract class AssignmentAnswerEntity extends BaseEntity {
     private Float score;
 
     @Column(name = "is_graded")
-    @Builder.Default
     private Boolean isGraded = false;
 
     @Column(name = "teacher_feedback", length = 1000)
