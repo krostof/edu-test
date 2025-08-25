@@ -1,13 +1,18 @@
 package com.edutest.persistance.repository;
 
-import com.edutest.api.model.UserProfile;
-import org.springframework.data.repository.CrudRepository;
+import com.edutest.persistance.entity.user.UserEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface UserRepository extends CrudRepository<UserProfile, Integer> {
+public interface UserRepository extends JpaRepository<UserEntity, Integer> {
 
-    Optional<UserProfile> findByUsername(String username);
-
+    Optional<UserEntity> findByUsername(String username);
+    
+    Optional<UserEntity> findByEmail(String email);
+    
+    boolean existsByUsername(String username);
+    
+    boolean existsByEmail(String email);
 
 }
