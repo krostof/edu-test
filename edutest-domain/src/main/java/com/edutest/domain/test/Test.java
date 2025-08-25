@@ -97,8 +97,8 @@ public class Test extends DomainEntity {
     }
 
     public int getTotalPoints() {
-        return assignments.stream()
-                .mapToInt(Assignment::getPoints)
+        return (int) assignments.stream()
+                .mapToDouble(Assignment::getPoints)
                 .sum();
     }
 
