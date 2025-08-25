@@ -3,9 +3,11 @@ package com.edutest.service.singlechoiceassigment;
 import com.edutest.domain.assignment.common.ChoiceOption;
 import com.edutest.domain.assignment.singlechoice.SingleChoiceAnswer;
 import com.edutest.domain.assignment.singlechoice.SingleChoiceAssignment;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public class SingleChoiceGradingService {
 
     public SingleChoiceAnswer autoGrade(SingleChoiceAnswer answer,
