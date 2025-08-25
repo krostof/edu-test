@@ -16,7 +16,6 @@ public class User extends BaseEntity {
 
     private String email;
 
-
     private String firstName;
 
     private String lastName;
@@ -28,8 +27,6 @@ public class User extends BaseEntity {
     private Boolean isActive = true;
 
     private String studentNumber;
-
-    private String employeeId;
 
     public String getFullName() {
         return firstName + " " + lastName;

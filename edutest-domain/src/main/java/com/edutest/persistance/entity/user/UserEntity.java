@@ -39,9 +39,6 @@ public class UserEntity extends BaseEntity {
     @Column(name = "student_number", length = 20)
     private String studentNumber;
 
-    @Column(name = "employee_id", length = 20)
-    private String employeeId;
-
     public String getFullName() {
         return firstName + " " + lastName;
     }
