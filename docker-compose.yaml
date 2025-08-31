@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: edutest-postgres
+    environment:
+      POSTGRES_DB: edutest
+      POSTGRES_USER: edutest
+      POSTGRES_PASSWORD: edutest_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      # Persistent data storage
+      - postgres_data:/var/lib/postgresql/data
+      # Custom PostgreSQL configuration
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      # Initialization scripts
+      - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      # Backup directory (host machine)
+      - ./backups:/backups
+      # Logs directory
+      - postgres_logs:/var/log/postgresql
+    networks:
+      - edutest-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U edutest -d edutest -h localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    # Optional: Use custom config file
+    # command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+
+volumes:
+  postgres_data:
+    driver: local
+  postgres_logs:
+    driver: local
+
+networks:
+  edutest-network:
+    driver: bridge
