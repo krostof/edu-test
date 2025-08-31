@@ -29,9 +29,8 @@ public class ChoiceOptionEntity extends BaseEntity {
     private Integer orderNumber;
 
     @Column(name = "explanation", length = 500)
-    private String explanation; // Wyjaśnienie dlaczego opcja jest poprawna/niepoprawna
+    private String explanation;
 
-    // Business methods
     public boolean isCorrectAnswer() {
         return Boolean.TRUE.equals(isCorrect);
     }
