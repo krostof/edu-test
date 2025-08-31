@@ -27,7 +27,7 @@ public class MultipleChoiceAnswerEntity extends AssignmentAnswerEntity {
 
     @Override
     public boolean isCorrect() {
-        MultipleChoiceAssignmentEntityEntity assignment = (MultipleChoiceAssignmentEntityEntity) getAssignmentEntity();
+        MultipleChoiceAssignmentEntity assignment = (MultipleChoiceAssignmentEntity) getAssignmentEntity();
         List<ChoiceOptionEntity> correctOptions = assignment.getCorrectOptions();
 
         return selectedOptions.size() == correctOptions.size() &&
@@ -36,7 +36,7 @@ public class MultipleChoiceAnswerEntity extends AssignmentAnswerEntity {
 
     @Override
     public float calculateScore() {
-        MultipleChoiceAssignmentEntityEntity assignment = (MultipleChoiceAssignmentEntityEntity) getAssignmentEntity();
+        MultipleChoiceAssignmentEntity assignment = (MultipleChoiceAssignmentEntity) getAssignmentEntity();
 
         String answerString = selectedOptions.stream()
                 .map(option -> option.getId().toString())
