@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserManagementService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+//    private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
 
     @Transactional
@@ -33,7 +33,7 @@ public class UserManagementService {
         UserEntity userEntity = UserEntity.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
-                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .password(request.getPassword())
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .studentNumber(request.getStudentNumber())
