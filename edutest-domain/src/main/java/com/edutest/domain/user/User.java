@@ -1,5 +1,6 @@
 package com.edutest.domain.user;
 
+import com.edutest.domain.common.DomainEntity;
 import com.edutest.persistance.entity.common.BaseEntity;
 import com.edutest.persistance.entity.user.UserEntityRole;
 import jakarta.persistence.*;
@@ -10,7 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User extends BaseEntity {
+public class User extends DomainEntity {
 
     private String username;
 
