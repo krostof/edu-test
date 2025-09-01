@@ -18,7 +18,7 @@ import java.util.List;
 @AllArgsConstructor
 public class SingleChoiceAssignmentEntityEntity extends AssignmentEntity {
 
-    @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "assignmentEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("orderNumber ASC")
     private List<ChoiceOptionEntity> options = new ArrayList<>();
 
