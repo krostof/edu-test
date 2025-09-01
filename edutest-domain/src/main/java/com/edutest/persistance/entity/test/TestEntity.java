@@ -57,12 +57,12 @@ public class TestEntity extends BaseEntity {
     @Builder.Default
     private List<StudentGroupEntity> assignedGroups = new ArrayList<>();
 
-    @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "testEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("orderNumber ASC")
     @Builder.Default
     private List<AssignmentEntity> assignmentEntities = new ArrayList<>();
 
-    @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "testEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<TestAttemptEntity> attempts = new ArrayList<>();
 
