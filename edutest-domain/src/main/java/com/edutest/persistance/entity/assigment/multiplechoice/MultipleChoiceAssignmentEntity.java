@@ -22,6 +22,7 @@ public class MultipleChoiceAssignmentEntity extends AssignmentEntity {
 
     @OneToMany(mappedBy = "assignmentEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("orderNumber ASC")
+    @Builder.Default
     private List<ChoiceOptionEntity> options = new ArrayList<>();
 
     @Column(name = "randomize_options")

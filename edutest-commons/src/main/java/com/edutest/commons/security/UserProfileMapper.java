@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.ZoneOffset;
 
-@Component
+@Component("userSecurityMapper")
 public class UserProfileMapper {
 
     public UserProfile toUserProfile(UserEntity entity) {

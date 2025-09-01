@@ -5,6 +5,7 @@ import com.edutest.api.model.UserRole;
 import com.edutest.api.model.UserSecurity;
 import com.edutest.commons.security.JwtTokenProvider;
 import com.edutest.commons.security.LoginAndRegisterFacade;
+import org.springframework.beans.factory.annotation.Qualifier;
 import com.edutest.commons.security.UserProfileMapper;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class AuthController{
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
     private final LoginAndRegisterFacade loginAndRegisterFacade;
+    @Qualifier("userSecurityMapper")
     private final UserProfileMapper userProfileMapper;
 
     @PostMapping("/login")
