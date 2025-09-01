@@ -769,6 +769,58 @@ components:
         - TEACHER
         - ADMIN
 
+    # Internal Security Schema (not exposed in API responses)
+    UserSecurity:
+      type: object
+      description: Internal user representation with security-sensitive data
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+        email:
+          type: string
+          format: email
+          maxLength: 100
+        password:
+          type: string
+          writeOnly: true
+          description: Password hash (never returned in responses)
+          minLength: 6
+          maxLength: 255
+        firstName:
+          type: string
+          minLength: 2
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 2
+          maxLength: 50
+        role:
+          $ref: '#/components/schemas/UserRole'
+        isActive:
+          type: boolean
+          default: true
+        studentNumber:
+          type: string
+          maxLength: 20
+          description: Student number for STUDENT role
+        employeeId:
+          type: string
+          maxLength: 20
+          description: Employee ID for TEACHER role
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+
     # Group Schemas
     StudentGroup:
       type: object
