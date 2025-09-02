@@ -5,22 +5,29 @@ import com.edutest.api.model.UserRole;
 import com.edutest.api.model.UserSecurity;
 import com.edutest.commons.security.JwtTokenProvider;
 import com.edutest.commons.security.LoginAndRegisterFacade;
+import com.edutest.persistance.entity.user.UserEntity;
+import com.edutest.persistance.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import com.edutest.commons.security.UserProfileMapper;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.util.Optional;
+
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -29,23 +36,37 @@ public class AuthController{
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
     private final LoginAndRegisterFacade loginAndRegisterFacade;
+    private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
     @Qualifier("userSecurityMapper")
     private final UserProfileMapper userProfileMapper;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
+        log.info("Login attempt for username: {}", loginRequest.getUsername());
+
+        Optional<UserEntity> byUsername = userRepository.findByUsername(loginRequest.getUsername());
+
+        if (byUsername.isEmpty()) {
+            log.info("Username not found for username: {}", loginRequest.getUsername());
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Invalid username or password"));
+        }
+
         try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            loginRequest.getUsername(),
-                            loginRequest.getPassword()
-                    )
+            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                    loginRequest.getUsername(),
+                    loginRequest.getPassword()
             );
+
+            Authentication authentication = authenticationManager.authenticate(authToken);
+            log.info("Authentication successful for user: {}", loginRequest.getUsername());
 
             String jwt = tokenProvider.generateJwtToken(authentication);
             
             return ResponseEntity.ok(new JwtResponse(jwt, "Bearer"));
         } catch (AuthenticationException e) {
+            log.warn("Authentication failed for username: {} - {}", loginRequest.getUsername(), e.getMessage());
             return ResponseEntity.badRequest()
                     .body(new MessageResponse("Invalid username or password"));
         }
@@ -71,6 +92,34 @@ public class AuthController{
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
                     .body(new MessageResponse(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/test/hash")
+    public ResponseEntity<?> testHash() {
+        String password = "admin123";
+        String hash = passwordEncoder.encode(password);
+        return ResponseEntity.ok(new MessageResponse("Hash for '" + password + "': " + hash));
+    }
+
+    @PostMapping("/test/fix-admin")
+    public ResponseEntity<?> fixAdminPassword() {
+        try {
+            // Just create admin user with proper password
+            UserSecurity user = loginAndRegisterFacade.registerUser(
+                    LoginAndRegisterFacade.RegisterRequest.builder()
+                            .username("admin")
+                            .email("admin@test.com")
+                            .password("admin123")
+                            .firstName("Admin")
+                            .lastName("User")
+                            .role(com.edutest.persistance.entity.user.UserEntityRole.ADMIN)
+                            .build()
+            );
+            
+            return ResponseEntity.ok(new MessageResponse("Created admin user with password admin123"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: " + e.getMessage()));
         }
     }
 
