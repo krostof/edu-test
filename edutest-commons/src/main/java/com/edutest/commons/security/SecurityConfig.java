@@ -50,7 +50,9 @@ public class SecurityConfig {
                                 "/webjars/**",
                                 "/swagger-resources/**",
                                 "/api/auth/register",
-                                "/api/auth/login"
+                                "/api/auth/login",
+                                "/api/auth/test/**",
+                                "/api/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
