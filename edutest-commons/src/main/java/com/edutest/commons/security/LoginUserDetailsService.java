@@ -2,6 +2,7 @@ package com.edutest.commons.security;
 
 import com.edutest.api.model.UserSecurity;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,6 +12,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import java.util.Collection;
 import java.util.List;
 
+@Slf4j
 @RequiredArgsConstructor
 public class LoginUserDetailsService implements UserDetailsService {
 
@@ -18,9 +20,13 @@ public class LoginUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return loginAndRegisterFacade.findUserByUsername(username)
-                .map(UserPrincipal::create)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+        var userOptional = loginAndRegisterFacade.findUserByUsername(username);
+        if (userOptional.isEmpty()) {
+            log.warn("User not found with username: {}", username);
+            throw new UsernameNotFoundException("User not found with username: " + username);
+        }
+        UserSecurity user = userOptional.get();
+        return UserPrincipal.create(user);
     }
 
     public static class UserPrincipal implements UserDetails {
