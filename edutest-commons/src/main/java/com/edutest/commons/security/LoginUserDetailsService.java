@@ -1,6 +1,7 @@
 package com.edutest.commons.security;
 
 import com.edutest.api.model.UserSecurity;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
@@ -30,8 +31,10 @@ public class LoginUserDetailsService implements UserDetailsService {
     }
 
     public static class UserPrincipal implements UserDetails {
+        @Getter
         private final String id;
         private final String username;
+        @Getter
         private final String email;
         private final String password;
         private final Collection<? extends GrantedAuthority> authorities;
@@ -60,14 +63,6 @@ public class LoginUserDetailsService implements UserDetailsService {
                 authorities,
                 user.getIsActive()
             );
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public String getEmail() {
-            return email;
         }
 
         @Override
