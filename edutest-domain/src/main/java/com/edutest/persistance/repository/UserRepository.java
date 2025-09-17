@@ -4,6 +4,7 @@ import com.edutest.domain.user.User;
 import com.edutest.domain.user.UserRole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
@@ -11,6 +12,7 @@ import java.util.Optional;
  * Domain repository interface for User.
  * Implementation should be provided in infrastructure layer.
  */
+@Repository
 public interface UserRepository {
 
     User save(User user);
