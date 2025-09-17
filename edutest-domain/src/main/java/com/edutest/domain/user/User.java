@@ -1,8 +1,6 @@
 package com.edutest.domain.user;
 
 import com.edutest.domain.common.DomainEntity;
-import com.edutest.persistance.entity.common.BaseEntity;
-import com.edutest.persistance.entity.user.UserEntityRole;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,8 +19,7 @@ public class User extends DomainEntity {
 
     private String lastName;
 
-    @Enumerated(EnumType.STRING)
-    private UserEntityRole role;
+    private UserRole role;
 
     @Builder.Default
     private Boolean isActive = true;
@@ -34,14 +31,14 @@ public class User extends DomainEntity {
     }
 
     public boolean isStudent() {
-        return UserEntityRole.STUDENT.equals(role);
+        return UserRole.STUDENT.equals(role);
     }
 
     public boolean isTeacher() {
-        return UserEntityRole.TEACHER.equals(role);
+        return UserRole.TEACHER.equals(role);
     }
 
     public boolean isAdmin() {
-        return UserEntityRole.ADMIN.equals(role);
+        return UserRole.ADMIN.equals(role);
     }
 }

@@ -14,6 +14,8 @@ import java.util.List;
 @Builder
 public class StudentGroup {
 
+    private Long id;
+
     private String name;
 
     private String description;
