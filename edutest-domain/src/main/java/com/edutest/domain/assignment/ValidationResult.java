@@ -24,10 +24,6 @@ public class ValidationResult {
                 .build();
     }
 
-    public boolean isValid() {
-        return valid;
-    }
-
     public boolean hasError() {
         return !valid;
     }
