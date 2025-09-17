@@ -1,6 +1,5 @@
 package com.edutest.domain.assignment;
 
-import com.edutest.domain.assignment.coding.CodingAssignment;
 import com.edutest.domain.test.Test;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -8,6 +7,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public abstract class Assignment {
 
     private Long id;
@@ -16,13 +16,13 @@ public abstract class Assignment {
     private String description;
     private Integer orderNumber;
     private Float points;
+    private Boolean isAttachmentAllowed;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public abstract AssignmentType getType();
     public abstract ValidationResult validateAnswer(String answer);
     public abstract Float calculateScore(String answer);
-    public abstract boolean supportsAttachments();
 
     public boolean hasValidPoints() {
         return points != null && points > 0;
