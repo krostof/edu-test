@@ -24,7 +24,6 @@ public class UserService {
     private final UserRepository userRepository;
 
     public boolean validatePassword(String password) {
-        userRepository.findByUsername(password).ifPresent(user -> {
             if (password.length() < 8) {
                 throw new IllegalArgumentException("Password must be at least 8 characters long");
             }
@@ -40,7 +39,6 @@ public class UserService {
             if (!password.matches(".*[!@#$%^&*()].*")) {
                 throw new IllegalArgumentException("Password must contain at least one special character");
             }
-        });
         return true;
     }
 
