@@ -29,20 +29,28 @@ public class JwtAuthTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         
+        log.debug("JwtAuthTokenFilter called for: {} {}", request.getMethod(), request.getRequestURI());
+
         try {
             String jwt = parseJwt(request);
             if (jwt != null && tokenProvider.validateJwtToken(jwt)) {
                 String username = tokenProvider.getUsernameFromJwtToken(jwt);
+                log.debug("JWT token validated for user: {}", username);
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                UsernamePasswordAuthenticationToken authentication = 
+                log.debug("User authorities loaded: {}", userDetails.getAuthorities());
+
+                UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                log.debug("Authentication set for user: {} with roles: {}", username, userDetails.getAuthorities());
+            } else {
+                log.debug("No valid JWT token found for request: {} {}", request.getMethod(), request.getRequestURI());
             }
         } catch (Exception e) {
-            log.error("Cannot set user authentication: {}", e.getMessage());
+            log.error("Cannot set user authentication: {}", e.getMessage(), e);
         }
 
         filterChain.doFilter(request, response);

@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtTokenProvider {
@@ -28,12 +30,25 @@ public class JwtTokenProvider {
 
     public String generateJwtToken(Authentication authentication) {
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
-        return generateJwtToken(userPrincipal.getUsername());
+
+        List<String> roles = userPrincipal.getAuthorities().stream()
+                .map(authority -> authority.getAuthority())
+                .collect(Collectors.toList());
+
+        Date expiryDate = Date.from(Instant.now().plusMillis(jwtExpirationMs));
+
+        return Jwts.builder()
+                .subject(userPrincipal.getUsername())
+                .claim("roles", roles)
+                .issuedAt(new Date())
+                .expiration(expiryDate)
+                .signWith(key)
+                .compact();
     }
 
     public String generateJwtToken(String username) {
         Date expiryDate = Date.from(Instant.now().plusMillis(jwtExpirationMs));
-        
+
         return Jwts.builder()
                 .subject(username)
                 .issuedAt(new Date())

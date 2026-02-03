@@ -4,9 +4,11 @@ import com.edutest.domain.test.Test;
 import com.edutest.domain.test.TestAttempt;
 import com.edutest.domain.user.User;
 import com.edutest.domain.group.StudentGroup;
+import com.edutest.persistance.entity.test.TestEntity;
 import com.edutest.persistance.repository.TestRepository;
 import com.edutest.persistance.repository.UserRepository;
 import com.edutest.persistance.repository.StudentGroupRepository;
+import com.edutest.util.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -26,6 +28,7 @@ public class TestService {
     private final TestRepository testRepository;
     private final UserRepository userRepository;
     private final StudentGroupRepository studentGroupRepository;
+    private final UserMapper userMapper;
 
     public Test createTest(String title, String description, LocalDateTime startDate, 
                           LocalDateTime endDate, Integer timeLimit, Boolean allowNavigation, 
@@ -34,6 +37,7 @@ public class TestService {
         log.info("Creating test: title={}, createdById={}", title, createdById);
 
         User creator = userRepository.findById(createdById)
+                .map(userMapper::toUser)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found with id: " + createdById));
 
         if (!creator.isTeacher() && !creator.isAdmin()) {
@@ -74,6 +78,7 @@ public class TestService {
     public List<Test> findByCreatedBy(Long createdById) {
         log.debug("Finding tests by creator id: {}", createdById);
         User creator = userRepository.findById(createdById)
+                .map(userMapper::toUser)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found with id: " + createdById));
         
         return testRepository.findByCreatedBy(creator);
@@ -83,13 +88,14 @@ public class TestService {
     public Page<Test> findByCreatedBy(Long createdById, Pageable pageable) {
         log.debug("Finding tests by creator id: {} with pagination", createdById);
         User creator = userRepository.findById(createdById)
+                .map(userMapper::toUser)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found with id: " + createdById));
         
         return testRepository.findByCreatedBy(creator, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<Test> findAll(Pageable pageable) {
+    public Page<TestEntity> findAll(Pageable pageable) {
         log.debug("Finding all tests with pagination");
         return testRepository.findAll(pageable);
     }
@@ -116,6 +122,7 @@ public class TestService {
     public List<Test> findAvailableTestsForStudent(Long studentId) {
         log.debug("Finding available tests for student: {}", studentId);
         User student = userRepository.findById(studentId)
+                .map(userMapper::toUser)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found with id: " + studentId));
 
         if (!student.isStudent()) {
@@ -251,6 +258,7 @@ public class TestService {
         
         Test test = findById(testId);
         User student = userRepository.findById(studentId)
+                .map(userMapper::toUser)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found with id: " + studentId));
 
         return test.isAvailableForStudent(student);
@@ -262,6 +270,7 @@ public class TestService {
         
         Test test = findById(testId);
         User student = userRepository.findById(studentId)
+                .map(userMapper::toUser)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found with id: " + studentId));
 
         return test.hasStudentStartedAttempt(student);
@@ -273,6 +282,7 @@ public class TestService {
         
         Test test = findById(testId);
         User student = userRepository.findById(studentId)
+                .map(userMapper::toUser)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found with id: " + studentId));
 
         return test.getStudentAttempt(student);
@@ -300,6 +310,7 @@ public class TestService {
     @Transactional(readOnly = true)
     public long countTestsByCreator(Long createdById) {
         User creator = userRepository.findById(createdById)
+                .map(userMapper::toUser)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found with id: " + createdById));
         
         return testRepository.countByCreatedBy(creator);

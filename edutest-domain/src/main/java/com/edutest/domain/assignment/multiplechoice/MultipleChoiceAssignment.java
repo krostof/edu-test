@@ -6,6 +6,7 @@ import com.edutest.domain.assignment.AssignmentType;
 import com.edutest.domain.assignment.ValidationResult;
 import com.edutest.domain.assignment.common.ChoiceOption;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -19,24 +20,20 @@ import java.util.stream.Collectors;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
+@SuperBuilder(toBuilder = true)
 public class MultipleChoiceAssignment extends Assignment {
 
-    private List<ChoiceOption> options;
-    private boolean randomizeOptions;
-    private boolean partialScoring;
-    private boolean penaltyForWrong;
+    @Builder.Default
+    private List<ChoiceOption> options = List.of();
 
-    @Builder(builderMethodName = "multipleChoiceBuilder")
-    public MultipleChoiceAssignment(Long id, Long testId, String title, String description,
-                                    Integer orderNumber, Float points, LocalDateTime createdAt,
-                                    LocalDateTime updatedAt, List<ChoiceOption> options,
-                                    boolean randomizeOptions, boolean partialScoring, boolean penaltyForWrong) {
-        super(id, testId, title, description, orderNumber, points, createdAt, updatedAt);
-        this.options = options != null ? List.copyOf(options) : List.of();
-        this.randomizeOptions = randomizeOptions;
-        this.partialScoring = partialScoring;
-        this.penaltyForWrong = penaltyForWrong;
-    }
+    @Builder.Default
+    private boolean randomizeOptions = false;
+
+    @Builder.Default
+    private boolean partialScoring = false;
+
+    @Builder.Default
+    private boolean penaltyForWrong = false;
 
     @Override
     public AssignmentType getType() {

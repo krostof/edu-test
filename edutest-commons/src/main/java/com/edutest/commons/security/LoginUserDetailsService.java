@@ -27,7 +27,10 @@ public class LoginUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("User not found with username: " + username);
         }
         UserSecurity user = userOptional.get();
-        return UserPrincipal.create(user);
+        log.debug("Loading user: {}, role: {}", username, user.getRole());
+        UserPrincipal principal = UserPrincipal.create(user);
+        log.debug("User principal created with authorities: {}", principal.getAuthorities());
+        return principal;
     }
 
     public static class UserPrincipal implements UserDetails {

@@ -2,12 +2,14 @@ package com.edutest.domain.assignment;
 
 import com.edutest.domain.test.Test;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
+
 import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder(toBuilder = true)
 public abstract class Assignment {
 
     private Long id;
@@ -66,4 +68,6 @@ public abstract class Assignment {
         }
         this.updatedAt = LocalDateTime.now();
     }
+
+    public abstract boolean supportsAttachments();
 }

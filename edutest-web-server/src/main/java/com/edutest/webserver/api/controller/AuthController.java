@@ -102,6 +102,61 @@ public class AuthController{
         return ResponseEntity.ok(new MessageResponse("Hash for '" + password + "': " + hash));
     }
 
+    @GetMapping("/test/current-user")
+    public ResponseEntity<?> getCurrentUser() {
+        org.springframework.security.core.Authentication auth =
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.ok(new MessageResponse("Not authenticated"));
+        }
+
+        String roles = auth.getAuthorities().stream()
+            .map(Object::toString)
+            .reduce((a, b) -> a + ", " + b)
+            .orElse("No roles");
+
+        return ResponseEntity.ok(new MessageResponse(
+            "User: " + auth.getName() + ", Roles: " + roles
+        ));
+    }
+
+    @GetMapping("/test/check-admin")
+    public ResponseEntity<?> checkAdmin() {
+        Optional<UserEntity> adminUser = userRepository.findByUsername("admin");
+
+        if (adminUser.isEmpty()) {
+            return ResponseEntity.ok(new MessageResponse("Admin user does not exist in database"));
+        }
+
+        UserEntity admin = adminUser.get();
+        return ResponseEntity.ok(new MessageResponse(
+            "Admin found: username=" + admin.getUsername() +
+            ", email=" + admin.getEmail() +
+            ", role=" + admin.getRole() +
+            ", isActive=" + admin.getIsActive()
+        ));
+    }
+
+    @GetMapping("/test/decode-token")
+    public ResponseEntity<?> decodeToken(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.ok(new MessageResponse("No token provided. Add Authorization: Bearer <token> header"));
+        }
+
+        String token = authHeader.substring(7);
+
+        try {
+            String username = tokenProvider.getUsernameFromJwtToken(token);
+            return ResponseEntity.ok(new MessageResponse(
+                "Token is valid. Username from token: " + username +
+                ". Token will be used to load user details with roles from database."
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.ok(new MessageResponse("Token is invalid: " + e.getMessage()));
+        }
+    }
+
     @PostMapping("/test/fix-admin")
     public ResponseEntity<?> fixAdminPassword() {
         try {

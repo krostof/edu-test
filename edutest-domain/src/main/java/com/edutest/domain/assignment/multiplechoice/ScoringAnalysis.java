@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-class ScoringAnalysis {
+public class ScoringAnalysis {
     private int correctSelections;
     private int wrongSelections;
     private int missedCorrect;

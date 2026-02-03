@@ -19,7 +19,7 @@ import java.util.Optional;
 public class StudentGroupRepositoryImpl implements StudentGroupRepository {
 
     private final StudentGroupJpaRepository jpaRepository;
-    private final UserJpaRepository userJpaRepository;
+    private final UserRepository userRepository;
 
     @Override
     public StudentGroup save(StudentGroup studentGroup) {
@@ -36,7 +36,7 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
 
     @Override
     public List<StudentGroup> findByTeacher(User teacher) {
-        UserEntity teacherEntity = userJpaRepository.findById(teacher.getId())
+        UserEntity teacherEntity = userRepository.findById(teacher.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found"));
         
         return jpaRepository.findByTeacher(teacherEntity)
@@ -59,7 +59,7 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
 
     @Override
     public Page<StudentGroup> findByTeacher(User teacher, Pageable pageable) {
-        UserEntity teacherEntity = userJpaRepository.findById(teacher.getId())
+        UserEntity teacherEntity = userRepository.findById(teacher.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found"));
         
         return jpaRepository.findByTeacher(teacherEntity, pageable)
@@ -68,7 +68,7 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
 
     @Override
     public List<StudentGroup> findByStudent(User student) {
-        UserEntity studentEntity = userJpaRepository.findById(student.getId())
+        UserEntity studentEntity = userRepository.findById(student.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Student not found"));
         
         return jpaRepository.findByStudent(studentEntity)
@@ -79,7 +79,7 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
 
     @Override
     public Optional<StudentGroup> findByNameAndTeacher(String name, User teacher) {
-        UserEntity teacherEntity = userJpaRepository.findById(teacher.getId())
+        UserEntity teacherEntity = userRepository.findById(teacher.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found"));
         
         return jpaRepository.findByNameAndTeacher(name, teacherEntity)
@@ -88,7 +88,7 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
 
     @Override
     public boolean existsByNameAndTeacher(String name, User teacher) {
-        UserEntity teacherEntity = userJpaRepository.findById(teacher.getId())
+        UserEntity teacherEntity = userRepository.findById(teacher.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found"));
         
         return jpaRepository.existsByNameAndTeacher(name, teacherEntity);
@@ -105,7 +105,7 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
     }
 
     private StudentGroupEntity mapToEntity(StudentGroup domain) {
-        UserEntity teacherEntity = userJpaRepository.findById(domain.getTeacher().getId())
+        UserEntity teacherEntity = userRepository.findById(domain.getTeacher().getId())
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found"));
 
         StudentGroupEntity entity = StudentGroupEntity.builder()

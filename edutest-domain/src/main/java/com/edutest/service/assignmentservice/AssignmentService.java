@@ -38,7 +38,7 @@ public class AssignmentService {
 
         Integer orderNumber = getNextOrderNumber(testId);
 
-        SingleChoiceAssignment assignment = SingleChoiceAssignment.singleChoiceBuilder()
+        SingleChoiceAssignment assignment = SingleChoiceAssignment.builder()
                 .testId(testId)
                 .title(title)
                 .description(description)
@@ -67,7 +67,7 @@ public class AssignmentService {
 
         Integer orderNumber = getNextOrderNumber(testId);
 
-        MultipleChoiceAssignment assignment = MultipleChoiceAssignment.multipleChoiceBuilder()
+        MultipleChoiceAssignment assignment = MultipleChoiceAssignment.builder()
                 .testId(testId)
                 .title(title)
                 .description(description)
@@ -126,7 +126,7 @@ public class AssignmentService {
 
         Integer orderNumber = getNextOrderNumber(testId);
 
-        CodingAssignment assignment = CodingAssignment.codingBuilder()
+        CodingAssignment assignment = CodingAssignment.builder()
                 .testId(testId)
                 .title(title)
                 .description(description)
@@ -334,7 +334,7 @@ public class AssignmentService {
 
     private Assignment createDuplicateAssignment(Assignment original, Integer newOrderNumber) {
         if (original instanceof SingleChoiceAssignment single) {
-            return SingleChoiceAssignment.singleChoiceBuilder()
+            return SingleChoiceAssignment.builder()
                     .testId(single.getTestId())
                     .title(single.getTitle() + " (Copy)")
                     .description(single.getDescription())
@@ -345,7 +345,7 @@ public class AssignmentService {
                     .updatedAt(LocalDateTime.now())
                     .build();
         } else if (original instanceof MultipleChoiceAssignment multiple) {
-            return MultipleChoiceAssignment.multipleChoiceBuilder()
+            return MultipleChoiceAssignment.builder()
                     .testId(multiple.getTestId())
                     .title(multiple.getTitle() + " (Copy)")
                     .description(multiple.getDescription())
@@ -370,7 +370,7 @@ public class AssignmentService {
                     .updatedAt(LocalDateTime.now())
                     .build();
         } else if (original instanceof CodingAssignment coding) {
-            return CodingAssignment.codingBuilder()
+            return CodingAssignment.builder()
                     .testId(coding.getTestId())
                     .title(coding.getTitle() + " (Copy)")
                     .description(coding.getDescription())

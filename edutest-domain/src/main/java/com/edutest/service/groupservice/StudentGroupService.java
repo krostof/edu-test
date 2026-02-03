@@ -4,6 +4,7 @@ import com.edutest.domain.group.StudentGroup;
 import com.edutest.persistance.repository.StudentGroupRepository;
 import com.edutest.domain.user.User;
 import com.edutest.persistance.repository.UserRepository;
+import com.edutest.util.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,11 +22,13 @@ public class StudentGroupService {
 
     private final StudentGroupRepository studentGroupRepository;
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     public StudentGroup createStudentGroup(String name, String description, Long teacherId) {
         log.info("Creating student group: name={}, description={}, teacherId={}", name, description, teacherId);
 
         User teacher = userRepository.findById(teacherId)
+                .map(userMapper::toUser)
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found with id: " + teacherId));
 
         if (!teacher.isAdmin()) {
@@ -59,6 +62,7 @@ public class StudentGroupService {
     public List<StudentGroup> findByTeacher(Long teacherId) {
         log.debug("Finding student groups by teacher id: {}", teacherId);
         User teacher = userRepository.findById(teacherId)
+                .map(userMapper::toUser)
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found with id: " + teacherId));
         
         return studentGroupRepository.findByTeacher(teacher);
@@ -68,6 +72,7 @@ public class StudentGroupService {
     public List<StudentGroup> findByStudent(Long studentId) {
         log.debug("Finding student groups by student id: {}", studentId);
         User student = userRepository.findById(studentId)
+                .map(userMapper::toUser)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found with id: " + studentId));
         
         return studentGroupRepository.findByStudent(student);
@@ -83,6 +88,7 @@ public class StudentGroupService {
     public Page<StudentGroup> findByTeacher(Long teacherId, Pageable pageable) {
         log.debug("Finding student groups by teacher id: {} with pagination", teacherId);
         User teacher = userRepository.findById(teacherId)
+                .map(userMapper::toUser)
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found with id: " + teacherId));
         
         return studentGroupRepository.findByTeacher(teacher, pageable);
@@ -132,6 +138,7 @@ public class StudentGroupService {
 
         StudentGroup group = findById(groupId);
         User student = userRepository.findById(studentId)
+                .map(userMapper::toUser)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found with id: " + studentId));
 
         if (!student.isStudent()) {
@@ -154,6 +161,7 @@ public class StudentGroupService {
 
         StudentGroup group = findById(groupId);
         User student = userRepository.findById(studentId)
+                .map(userMapper::toUser)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found with id: " + studentId));
 
         if (!group.containsStudent(student)) {
@@ -187,6 +195,7 @@ public class StudentGroupService {
         
         StudentGroup group = findById(groupId);
         User student = userRepository.findById(studentId)
+                .map(userMapper::toUser)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found with id: " + studentId));
         
         return group.containsStudent(student);

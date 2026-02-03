@@ -4,6 +4,7 @@ import com.edutest.domain.assignment.Assignment;
 import com.edutest.domain.assignment.AssignmentType;
 import com.edutest.domain.assignment.ValidationResult;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -12,9 +13,9 @@ import java.util.stream.Collectors;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
+@SuperBuilder(toBuilder = true)
 public class CodingAssignment extends Assignment {
 
     private Integer timeLimitMs;
@@ -26,20 +27,6 @@ public class CodingAssignment extends Assignment {
     @Builder.Default
     private List<TestCase> testCases = List.of();
 
-    @Builder(builderMethodName = "codingBuilder")
-    public CodingAssignment(Long id, Long testId, String title, String description,
-                            Integer orderNumber, Float points, LocalDateTime createdAt,
-                            LocalDateTime updatedAt, Integer timeLimitMs, Integer memoryLimitMb,
-                            String allowedLanguages, String starterCode, String solutionTemplate,
-                            List<TestCase> testCases) {
-        super(id, testId, title, description, orderNumber, points, createdAt, updatedAt);
-        this.timeLimitMs = timeLimitMs;
-        this.memoryLimitMb = memoryLimitMb;
-        this.allowedLanguages = allowedLanguages;
-        this.starterCode = starterCode;
-        this.solutionTemplate = solutionTemplate;
-        this.testCases = testCases != null ? List.copyOf(testCases) : List.of();
-    }
 
     @Override
     public AssignmentType getType() {
@@ -62,9 +49,7 @@ public class CodingAssignment extends Assignment {
     @Override
     public Float calculateScore(String answer) {
         ValidationResult validation = validateAnswer(answer);
-        if (validation.hasError()) {
-            return 0.0f;
-        }
+        validation.hasError();
         return 0.0f;
     }
 

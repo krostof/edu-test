@@ -5,12 +5,14 @@ import com.edutest.domain.assignment.AssignmentType;
 import com.edutest.domain.assignment.ValidationResult;
 import jakarta.persistence.DiscriminatorValue;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @DiscriminatorValue("OPEN_QUESTION")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@SuperBuilder(toBuilder = true)
 public class OpenQuestionAssignment extends Assignment {
 
     private Integer maxLength;

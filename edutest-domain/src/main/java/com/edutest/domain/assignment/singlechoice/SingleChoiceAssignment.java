@@ -5,13 +5,14 @@ import com.edutest.domain.assignment.AssignmentType;
 import com.edutest.domain.assignment.ValidationResult;
 import com.edutest.domain.assignment.common.ChoiceOption;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Builder(toBuilder = true)  // Dla immutable operations
+@SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class SingleChoiceAssignment extends Assignment {
@@ -22,15 +23,6 @@ public class SingleChoiceAssignment extends Assignment {
     @Builder.Default
     private boolean randomizeOptions = false;
 
-    @Builder(builderMethodName = "singleChoiceBuilder")
-    public SingleChoiceAssignment(Long id, Long testId, String title, String description,
-                                  Integer orderNumber, Float points, LocalDateTime createdAt,
-                                  LocalDateTime updatedAt, List<ChoiceOption> options,
-                                  boolean randomizeOptions) {
-        super(id, testId, title, description, orderNumber, points, createdAt, updatedAt);
-        this.options = options != null ? List.copyOf(options) : List.of();
-        this.randomizeOptions = randomizeOptions;
-    }
 
     @Override
     public AssignmentType getType() {
