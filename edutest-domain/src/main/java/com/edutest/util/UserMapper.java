@@ -1,5 +1,7 @@
 package com.edutest.util;
 
+import com.edutest.api.model.CreateStudentRequest;
+import com.edutest.api.model.CreateTeacherRequest;
 import com.edutest.api.model.UserProfile;
 import com.edutest.domain.user.User;
 import com.edutest.domain.user.UserRole;
@@ -39,8 +41,58 @@ public class UserMapper {
         userProfile.setEmail(entity.getEmail());
         userProfile.setFirstName(entity.getFirstName());
         userProfile.setLastName(entity.getLastName());
+        userProfile.setRole(mapToApiUserRole(entity.getRole()));
         userProfile.setIsActive(entity.getIsActive());
         return userProfile;
+    }
+
+    private com.edutest.api.model.UserRole mapToApiUserRole(UserEntityRole entityRole) {
+        if (entityRole == null) {
+            return null;
+        }
+
+        return switch (entityRole) {
+            case STUDENT -> com.edutest.api.model.UserRole.STUDENT;
+            case TEACHER -> com.edutest.api.model.UserRole.TEACHER;
+            case ADMIN -> com.edutest.api.model.UserRole.ADMIN;
+        };
+    }
+
+    public UserEntityRole toEntityRole(com.edutest.api.model.UserRole role) {
+        if (role == null) {
+            return null;
+        }
+
+        return switch (role) {
+            case STUDENT -> UserEntityRole.STUDENT;
+            case TEACHER -> UserEntityRole.TEACHER;
+            case ADMIN -> UserEntityRole.ADMIN;
+        };
+    }
+
+    public UserEntity toStudentEntity(CreateStudentRequest request, String encodedPassword) {
+        return UserEntity.builder()
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .password(encodedPassword)
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .studentNumber(request.getStudentNumber())
+                .role(UserEntityRole.STUDENT)
+                .isActive(true)
+                .build();
+    }
+
+    public UserEntity toTeacherEntity(CreateTeacherRequest request, String encodedPassword) {
+        return UserEntity.builder()
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .password(encodedPassword)
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .role(UserEntityRole.TEACHER)
+                .isActive(true)
+                .build();
     }
 
 }

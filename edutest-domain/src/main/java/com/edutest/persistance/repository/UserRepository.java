@@ -5,6 +5,8 @@ import com.edutest.persistance.entity.user.UserEntityRole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -24,4 +26,21 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     boolean existsByEmail(String email);
     
     Page<UserEntity> findByRole(UserEntityRole role, Pageable pageable);
+
+    @Query("SELECT COUNT(sg) FROM StudentGroupEntity sg WHERE sg.teacher.id = :teacherId")
+    long countGroupsByTeacherId(@Param("teacherId") Long teacherId);
+
+    @Query("SELECT u FROM UserEntity u WHERE " +
+           "LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<UserEntity> searchUsers(@Param("search") String search, Pageable pageable);
+
+    @Query("SELECT u FROM UserEntity u WHERE u.role = :role AND (" +
+           "LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<UserEntity> searchUsersByRole(@Param("search") String search, @Param("role") UserEntityRole role, Pageable pageable);
 }

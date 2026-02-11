@@ -315,6 +315,112 @@ paths:
         '403':
           description: Access denied - admin role required
 
+  /admin/users/{userId}/activate:
+    patch:
+      tags:
+        - Admin
+      summary: Activate user account
+      description: Activate user account (admin only)
+      operationId: activateUser
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: User activated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '404':
+          description: User not found
+        '403':
+          description: Access denied - admin role required
+
+  /admin/users/{userId}/deactivate:
+    patch:
+      tags:
+        - Admin
+      summary: Deactivate user account
+      description: Deactivate user account (admin only)
+      operationId: deactivateUser
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: User deactivated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '404':
+          description: User not found
+        '403':
+          description: Access denied - admin role required
+
+  /admin/users/batch-deactivate:
+    post:
+      tags:
+        - Admin
+      summary: Batch deactivate users
+      description: Deactivate multiple user accounts at once (admin only)
+      operationId: batchDeactivateUsers
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchUserIdsRequest'
+      responses:
+        '200':
+          description: Batch deactivation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchOperationResponse'
+        '403':
+          description: Access denied - admin role required
+
+  /admin/users/batch-delete:
+    delete:
+      tags:
+        - Admin
+      summary: Batch delete users
+      description: Delete multiple user accounts at once (admin only)
+      operationId: batchDeleteUsers
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchUserIdsRequest'
+      responses:
+        '200':
+          description: Batch deletion completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchOperationResponse'
+        '403':
+          description: Access denied - admin role required
+
   # Group Management Endpoints
   /groups:
     get:
@@ -668,17 +774,12 @@ components:
     CreateStudentRequest:
       type: object
       required:
-        - username
         - email
         - firstName
         - lastName
         - studentNumber
         - password
       properties:
-        username:
-          type: string
-          minLength: 3
-          maxLength: 50
         email:
           type: string
           format: email
@@ -768,6 +869,34 @@ components:
         - STUDENT
         - TEACHER
         - ADMIN
+
+    BatchUserIdsRequest:
+      type: object
+      required:
+        - userIds
+      properties:
+        userIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          minItems: 1
+          maxItems: 100
+
+    BatchOperationResponse:
+      type: object
+      properties:
+        successCount:
+          type: integer
+          description: Number of successfully processed users
+        failedCount:
+          type: integer
+          description: Number of failed operations
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages for failed operations
 
     # Internal Security Schema (not exposed in API responses)
     UserSecurity:
