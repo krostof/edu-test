@@ -1,6 +1,7 @@
 package com.edutest.commons.security;
 
 import com.edutest.api.model.UserSecurity;
+import com.edutest.service.security.LoginAndRegisterFacade;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

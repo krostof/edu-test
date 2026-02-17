@@ -4,11 +4,11 @@ import com.edutest.api.model.UserProfile;
 import com.edutest.api.model.UserRole;
 import com.edutest.api.model.UserSecurity;
 import com.edutest.commons.security.JwtTokenProvider;
-import com.edutest.commons.security.LoginAndRegisterFacade;
+import com.edutest.service.security.LoginAndRegisterFacade;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
-import com.edutest.commons.security.UserProfileMapper;
+import com.edutest.service.security.UserProfileMapper;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +38,7 @@ public class AuthController{
     private final LoginAndRegisterFacade loginAndRegisterFacade;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
-    @Qualifier("userSecurityMapper")
+    @Qualifier("securityUserProfileMapper")
     private final UserProfileMapper userProfileMapper;
 
     @PostMapping("/login")

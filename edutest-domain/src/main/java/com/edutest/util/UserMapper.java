@@ -72,7 +72,6 @@ public class UserMapper {
 
     public UserEntity toStudentEntity(CreateStudentRequest request, String encodedPassword) {
         return UserEntity.builder()
-                .username(request.getUsername())
                 .email(request.getEmail())
                 .password(encodedPassword)
                 .firstName(request.getFirstName())

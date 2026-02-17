@@ -5,7 +5,7 @@ import com.edutest.dto.BatchOperationResult;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.entity.user.UserEntityRole;
 import com.edutest.persistance.repository.UserRepository;
-import com.edutest.service.LoginGenerator;
+import com.edutest.service.port.LoginGeneratorPort;
 import com.edutest.util.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,11 +26,11 @@ public class UserManagementService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
-    private final LoginGenerator loginGenerator;
+    private final LoginGeneratorPort loginGenerator;
 
     @Transactional
     public UserProfile createStudent(CreateStudentRequest request) {
-        validateUserDoesNotExist(request.getUsername(), request.getEmail());
+        validateUserDoesNotExist(request.getEmail());
         
         String encodedPassword = passwordEncoder.encode(request.getPassword());
         UserEntity userEntity = userMapper.toStudentEntity(request, encodedPassword);
@@ -43,7 +43,7 @@ public class UserManagementService {
 
     @Transactional
     public UserProfile createTeacher(CreateTeacherRequest request) {
-        validateUserDoesNotExist(request.getUsername(), request.getEmail());
+        validateUserDoesNotExist(request.getEmail());
         
         String encodedPassword = passwordEncoder.encode(request.getPassword());
         UserEntity userEntity = userMapper.toTeacherEntity(request, encodedPassword);
@@ -214,11 +214,7 @@ public class UserManagementService {
         return result;
     }
 
-    private void validateUserDoesNotExist(String username, String email) {
-        if (userRepository.existsByUsername(username)) {
-            throw new IllegalArgumentException("Username already exists: " + username);
-        }
-        
+    private void validateUserDoesNotExist(String email) {
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email already exists: " + email);
         }
