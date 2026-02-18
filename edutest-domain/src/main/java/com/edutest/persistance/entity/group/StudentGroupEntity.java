@@ -36,10 +36,9 @@ public class StudentGroupEntity extends BaseEntity {
             throw new IllegalArgumentException("Only students can be added to groups");
         }
 
-        StudentGroupMemberEntity member = StudentGroupMemberEntity.builder()
-                .group(this)
-                .student(student)
-                .build();
+        StudentGroupMemberEntity member = new StudentGroupMemberEntity();
+        member.setGroup(this);
+        member.setStudent(student);
 
         members.add(member);
     }

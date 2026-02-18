@@ -108,11 +108,10 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
         UserEntity teacherEntity = userRepository.findById(domain.getTeacher().getId())
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found"));
 
-        StudentGroupEntity entity = StudentGroupEntity.builder()
-                .name(domain.getName())
-                .description(domain.getDescription())
-                .teacher(teacherEntity)
-                .build();
+        StudentGroupEntity entity = new StudentGroupEntity();
+        entity.setName(domain.getName());
+        entity.setDescription(domain.getDescription());
+        entity.setTeacher(teacherEntity);
 
         if (domain.getId() != null) {
             entity.setId(domain.getId());

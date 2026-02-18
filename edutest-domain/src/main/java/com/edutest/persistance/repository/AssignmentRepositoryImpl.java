@@ -214,9 +214,8 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
     }
 
     private SingleChoiceAssignmentEntityEntity mapSingleChoiceToEntity(SingleChoiceAssignment domain, TestEntity testEntity) {
-        SingleChoiceAssignmentEntityEntity entity = SingleChoiceAssignmentEntityEntity.builder()
-                .randomizeOptions(domain.isRandomizeOptions())
-                .build();
+        SingleChoiceAssignmentEntityEntity entity = new SingleChoiceAssignmentEntityEntity();
+        entity.setRandomizeOptions(domain.isRandomizeOptions());
 
         mapCommonFields(domain, entity, testEntity);
 
@@ -231,11 +230,10 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
     }
 
     private MultipleChoiceAssignmentEntity mapMultipleChoiceToEntity(MultipleChoiceAssignment domain, TestEntity testEntity) {
-        MultipleChoiceAssignmentEntity entity = MultipleChoiceAssignmentEntity.builder()
-                .randomizeOptions(domain.isRandomizeOptions())
-                .partialScoring(domain.isPartialScoring())
-                .penaltyForWrong(domain.isPenaltyForWrong())
-                .build();
+        MultipleChoiceAssignmentEntity entity = new MultipleChoiceAssignmentEntity();
+        entity.setRandomizeOptions(domain.isRandomizeOptions());
+        entity.setPartialScoring(domain.isPartialScoring());
+        entity.setPenaltyForWrong(domain.isPenaltyForWrong());
 
         mapCommonFields(domain, entity, testEntity);
 
@@ -250,14 +248,13 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
     }
 
     private OpenQuestionAssignmentEntityEntity mapOpenQuestionToEntity(OpenQuestionAssignment domain, TestEntity testEntity) {
-        OpenQuestionAssignmentEntityEntity entity = OpenQuestionAssignmentEntityEntity.builder()
-                .maxLength(domain.getMaxLength())
-                .minLength(domain.getMinLength())
-                .sampleAnswer(domain.getSampleAnswer())
-                .gradingRubric(domain.getGradingRubric())
-                .allowHtml(domain.getAllowHtml())
-                .caseSensitive(domain.getCaseSensitive())
-                .build();
+        OpenQuestionAssignmentEntityEntity entity = new OpenQuestionAssignmentEntityEntity();
+        entity.setMaxLength(domain.getMaxLength());
+        entity.setMinLength(domain.getMinLength());
+        entity.setSampleAnswer(domain.getSampleAnswer());
+        entity.setGradingRubric(domain.getGradingRubric());
+        entity.setAllowHtml(domain.getAllowHtml());
+        entity.setCaseSensitive(domain.getCaseSensitive());
 
         mapCommonFields(domain, entity, testEntity);
 
@@ -296,13 +293,12 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
     }
 
     private ChoiceOptionEntity mapChoiceOptionToEntity(ChoiceOption domain, AssignmentEntity assignmentEntity) {
-        ChoiceOptionEntity entity = ChoiceOptionEntity.builder()
-                .assignmentEntity(assignmentEntity)
-                .optionText(domain.getOptionText())
-                .isCorrect(domain.isCorrect())
-                .orderNumber(domain.getOrderNumber())
-                .explanation(domain.getExplanation())
-                .build();
+        ChoiceOptionEntity entity = new ChoiceOptionEntity();
+        entity.setAssignmentEntity(assignmentEntity);
+        entity.setOptionText(domain.getOptionText());
+        entity.setIsCorrect(domain.isCorrect());
+        entity.setOrderNumber(domain.getOrderNumber());
+        entity.setExplanation(domain.getExplanation());
 
         if (domain.getId() != null) {
             entity.setId(domain.getId());
@@ -312,14 +308,13 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
     }
 
     private TestCaseEntity mapTestCaseToEntity(TestCase domain, CodingAssignmentEntity assignmentEntity) {
-        TestCaseEntity entity = TestCaseEntity.builder()
-                .assignment(assignmentEntity)
-                .inputData(domain.getInputData())
-                .expectedOutput(domain.getExpectedOutput())
-                .isPublic(domain.getIsPublic())
-                .description(domain.getDescription())
-                .weight(domain.getWeight())
-                .build();
+        TestCaseEntity entity = new TestCaseEntity();
+        entity.setAssignment(assignmentEntity);
+        entity.setInputData(domain.getInputData());
+        entity.setExpectedOutput(domain.getExpectedOutput());
+        entity.setIsPublic(domain.getIsPublic());
+        entity.setDescription(domain.getDescription());
+        entity.setWeight(domain.getWeight());
 
         if (domain.getId() != null) {
             entity.setId(domain.getId());

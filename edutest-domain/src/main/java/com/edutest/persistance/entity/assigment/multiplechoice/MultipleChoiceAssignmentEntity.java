@@ -120,13 +120,12 @@ public class MultipleChoiceAssignmentEntity extends AssignmentEntity {
     }
 
     public void addOption(String optionText, boolean isCorrect, String explanation) {
-        ChoiceOptionEntity option = ChoiceOptionEntity.builder()
-                .assignmentEntity(this)
-                .optionText(optionText)
-                .isCorrect(isCorrect)
-                .orderNumber(options.size() + 1)
-                .explanation(explanation)
-                .build();
+        ChoiceOptionEntity option = new ChoiceOptionEntity();
+        option.setAssignmentEntity(this);
+        option.setOptionText(optionText);
+        option.setIsCorrect(isCorrect);
+        option.setOrderNumber(options.size() + 1);
+        option.setExplanation(explanation);
 
         options.add(option);
     }

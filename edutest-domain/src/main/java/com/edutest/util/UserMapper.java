@@ -71,27 +71,27 @@ public class UserMapper {
     }
 
     public UserEntity toStudentEntity(CreateStudentRequest request, String encodedPassword) {
-        return UserEntity.builder()
-                .email(request.getEmail())
-                .password(encodedPassword)
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .studentNumber(request.getStudentNumber())
-                .role(UserEntityRole.STUDENT)
-                .isActive(true)
-                .build();
+        UserEntity entity = new UserEntity();
+        entity.setEmail(request.getEmail());
+        entity.setPassword(encodedPassword);
+        entity.setFirstName(request.getFirstName());
+        entity.setLastName(request.getLastName());
+        entity.setStudentNumber(request.getStudentNumber());
+        entity.setRole(UserEntityRole.STUDENT);
+        entity.setIsActive(true);
+        return entity;
     }
 
     public UserEntity toTeacherEntity(CreateTeacherRequest request, String encodedPassword) {
-        return UserEntity.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
-                .password(encodedPassword)
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .role(UserEntityRole.TEACHER)
-                .isActive(true)
-                .build();
+        UserEntity entity = new UserEntity();
+        entity.setUsername(request.getUsername());
+        entity.setEmail(request.getEmail());
+        entity.setPassword(encodedPassword);
+        entity.setFirstName(request.getFirstName());
+        entity.setLastName(request.getLastName());
+        entity.setRole(UserEntityRole.TEACHER);
+        entity.setIsActive(true);
+        return entity;
     }
 
 }

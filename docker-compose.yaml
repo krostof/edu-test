@@ -14,8 +14,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
       # Custom PostgreSQL configuration
       - ./postgresql.conf:/etc/postgresql/postgresql.conf:ro
-      # Initialization scripts
-      - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      # Initialization scripts - wszystkie pliki SQL z katalogu init.sql
+      - ./init.sql:/docker-entrypoint-initdb.d:ro
       # Backup directory (host machine)
       - ./backups:/backups
       # Logs directory

@@ -41,17 +41,17 @@ public class CodeSubmissionMapper {
     public CodeSubmissionEntity toEntity(CodeSubmission domain) {
         if (domain == null) return null;
 
-        return CodeSubmissionEntity.builder()
-                .sourceCode(domain.getSourceCode())
-                .programmingLanguage(domain.getProgrammingLanguage())
-                .submittedAt(domain.getSubmittedAt())
-                .compilationStatus(mapCompilationStatusEnum(domain.getCompilationStatus()))
-                .compilationError(domain.getCompilationError())
-                .executionStatus(mapExecutionStatusEnum(domain.getExecutionStatus()))
-                .totalScore(domain.getTotalScore())
-                .maxExecutionTimeMs(domain.getMaxExecutionTimeMs())
-                .maxMemoryUsedMb(domain.getMaxMemoryUsedMb())
-                .build();
+        CodeSubmissionEntity entity = new CodeSubmissionEntity();
+        entity.setSourceCode(domain.getSourceCode());
+        entity.setProgrammingLanguage(domain.getProgrammingLanguage());
+        entity.setSubmittedAt(domain.getSubmittedAt());
+        entity.setCompilationStatus(mapCompilationStatusEnum(domain.getCompilationStatus()));
+        entity.setCompilationError(domain.getCompilationError());
+        entity.setExecutionStatus(mapExecutionStatusEnum(domain.getExecutionStatus()));
+        entity.setTotalScore(domain.getTotalScore());
+        entity.setMaxExecutionTimeMs(domain.getMaxExecutionTimeMs());
+        entity.setMaxMemoryUsedMb(domain.getMaxMemoryUsedMb());
+        return entity;
     }
 
     private List<TestCaseResult> mapTestCaseResults(List<TestCaseResultEntity> entities) {
