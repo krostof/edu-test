@@ -1,4 +1,4 @@
-package com.edutest.webserver.api.dto;
+package com.edutest.dto;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

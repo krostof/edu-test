@@ -1,4 +1,4 @@
-package com.edutest.webserver.api.exception;
+package com.edutest.commons;
 
 import com.edutest.api.model.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;

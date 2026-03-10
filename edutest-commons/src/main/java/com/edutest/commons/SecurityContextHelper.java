@@ -1,4 +1,4 @@
-package com.edutest.webserver.api.helper;
+package com.edutest.commons;
 
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.repository.UserRepository;

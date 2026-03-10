@@ -3,9 +3,12 @@ package com.edutest.service;
 import com.edutest.domain.test.Test;
 import com.edutest.domain.test.TestAttempt;
 import com.edutest.domain.user.User;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+@Service
 public class TestAttemptService {
 
     public TestAttempt startTestAttempt(Test test, User student) {

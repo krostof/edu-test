@@ -1,15 +1,11 @@
 package com.edutest.webserver.api.controller;
 
 import com.edutest.domain.assignment.Assignment;
-import com.edutest.domain.assignment.coding.CodingAssignment;
 import com.edutest.domain.assignment.coding.TestCase;
 import com.edutest.domain.assignment.common.ChoiceOption;
-import com.edutest.domain.assignment.multiplechoice.MultipleChoiceAssignment;
-import com.edutest.domain.assignment.openquestion.OpenQuestionAssignment;
-import com.edutest.domain.assignment.singlechoice.SingleChoiceAssignment;
+import com.edutest.dto.*;
 import com.edutest.service.assignmentservice.AssignmentService;
-import com.edutest.webserver.api.dto.*;
-import com.edutest.webserver.api.mapper.AssignmentMapper;
+import com.edutest.util.AssignmentMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

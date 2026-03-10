@@ -1,4 +1,4 @@
-package com.edutest.webserver.api.mapper;
+package com.edutest.util;
 
 import com.edutest.api.model.Assignment;
 import com.edutest.domain.assignment.coding.CodingAssignment;
@@ -7,9 +7,9 @@ import com.edutest.domain.assignment.common.ChoiceOption;
 import com.edutest.domain.assignment.multiplechoice.MultipleChoiceAssignment;
 import com.edutest.domain.assignment.openquestion.OpenQuestionAssignment;
 import com.edutest.domain.assignment.singlechoice.SingleChoiceAssignment;
-import com.edutest.webserver.api.dto.AssignmentResponse;
-import com.edutest.webserver.api.dto.ChoiceOptionDto;
-import com.edutest.webserver.api.dto.TestCaseDto;
+import com.edutest.dto.AssignmentResponse;
+import com.edutest.dto.ChoiceOptionDto;
+import com.edutest.dto.TestCaseDto;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

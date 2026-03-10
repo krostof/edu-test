@@ -1,18 +1,26 @@
-package com.edutest.webserver.api.dto;
+package com.edutest.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
-public class AssignmentResponse {
-    private Long id;
+public class CreateAssignmentRequest {
+
+    @NotNull
     private String type;
+
+    @NotBlank
     private String title;
+
     private String description;
-    private Integer orderNumber;
+
+    @NotNull
+    @Positive
     private Float points;
-    private Boolean isAttachmentAllowed;
 
     // Single Choice / Multiple Choice
     private List<ChoiceOptionDto> options;

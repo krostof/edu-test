@@ -9,7 +9,7 @@ import com.edutest.persistance.entity.user.UserEntityRole;
 import com.edutest.persistance.repository.UserRepository;
 import com.edutest.service.groupservice.StudentGroupService;
 import com.edutest.util.UserMapper;
-import com.edutest.webserver.api.helper.SecurityContextHelper;
+import com.edutest.commons.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

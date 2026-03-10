@@ -1,12 +1,10 @@
-package com.edutest.webserver.api.mapper;
+package com.edutest.util;
 
 import com.edutest.api.model.Test;
 import com.edutest.api.model.TestAttempt;
 import com.edutest.api.model.TestDetails;
 import com.edutest.api.model.UserProfile;
 import com.edutest.domain.user.User;
-import com.edutest.util.UserMapper;
-import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

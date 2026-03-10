@@ -2,7 +2,7 @@ package com.edutest.webserver.api.controller;
 
 import com.edutest.domain.group.StudentGroup;
 import com.edutest.service.testservice.TestService;
-import com.edutest.webserver.api.dto.AssignGroupRequest;
+import com.edutest.dto.AssignGroupRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
