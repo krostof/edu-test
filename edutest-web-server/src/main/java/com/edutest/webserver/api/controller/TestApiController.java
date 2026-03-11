@@ -1,20 +1,16 @@
 package com.edutest.webserver.api.controller;
 
 import com.edutest.api.TestsApi;
-import com.edutest.api.model.CreateTestRequest;
-import com.edutest.api.model.Test;
-import com.edutest.api.model.TestAttempt;
-import com.edutest.api.model.TestDetails;
+import com.edutest.api.model.*;
+import com.edutest.domain.group.StudentGroup;
 import com.edutest.domain.user.User;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.entity.user.UserEntityRole;
 import com.edutest.service.TestAttemptService;
 import com.edutest.service.testservice.TestService;
 import com.edutest.util.UserMapper;
-import com.edutest.dto.UpdateTestRequest;
 import com.edutest.commons.SecurityContextHelper;
 import com.edutest.util.TestMapper;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -108,9 +104,8 @@ public class TestApiController implements TestsApi {
         return ResponseEntity.status(201).body(testMapper.toApiTestAttempt(result.getAttempt()));
     }
 
-    @PutMapping("/tests/{testId}")
-    public ResponseEntity<Test> updateTest(@PathVariable Long testId,
-                                           @Valid @RequestBody UpdateTestRequest request) {
+    @Override
+    public ResponseEntity<Test> updateTest(Long testId, UpdateTestRequest request) {
         log.info("Updating test id={}", testId);
 
         LocalDateTime startDate = request.getStartDate() != null
@@ -132,10 +127,43 @@ public class TestApiController implements TestsApi {
         return ResponseEntity.ok(testMapper.toApiTest(updated));
     }
 
-    @DeleteMapping("/tests/{testId}")
-    public ResponseEntity<Void> deleteTest(@PathVariable Long testId) {
+    @Override
+    public ResponseEntity<Void> deleteTest(Long testId) {
         log.info("Deleting test id={}", testId);
         testService.deleteTest(testId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<List<TestGroupResponse>> getTestGroups(Long testId) {
+        log.info("Getting groups for testId={}", testId);
+        List<StudentGroup> groups = testService.getTestGroups(testId);
+        List<TestGroupResponse> result = groups.stream()
+                .map(this::toTestGroupResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
+    @Override
+    public ResponseEntity<Void> assignGroupToTest(Long testId, AssignGroupRequest request) {
+        log.info("Assigning group {} to test {}", request.getGroupId(), testId);
+        testService.assignGroupToTest(testId, request.getGroupId());
+        return ResponseEntity.ok().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> removeGroupFromTest(Long testId, Long groupId) {
+        log.info("Removing group {} from test {}", groupId, testId);
+        testService.removeGroupFromTest(testId, groupId);
+        return ResponseEntity.noContent().build();
+    }
+
+    private TestGroupResponse toTestGroupResponse(StudentGroup group) {
+        TestGroupResponse resp = new TestGroupResponse();
+        resp.setId(group.getId());
+        resp.setName(group.getName());
+        resp.setDescription(group.getDescription());
+        resp.setStudentCount(group.getStudentCount());
+        return resp;
     }
 }

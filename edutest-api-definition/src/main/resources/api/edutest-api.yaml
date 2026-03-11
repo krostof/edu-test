@@ -632,6 +632,64 @@ paths:
         '404':
           description: Test not found
 
+    put:
+      tags:
+        - Tests
+      summary: Update test
+      description: Update test information (teacher only)
+      operationId: updateTest
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTestRequest'
+      responses:
+        '200':
+          description: Test updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Test'
+        '404':
+          description: Test not found
+        '403':
+          description: Access denied
+
+    delete:
+      tags:
+        - Tests
+      summary: Delete test
+      description: Delete test (teacher only)
+      operationId: deleteTest
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Test deleted successfully
+        '404':
+          description: Test not found
+        '409':
+          description: Cannot delete test with existing attempts
+        '403':
+          description: Access denied
+
   /tests/{testId}/start:
     post:
       tags:
@@ -657,6 +715,334 @@ paths:
                 $ref: '#/components/schemas/TestAttempt'
         '409':
           description: Test attempt already exists or test not available
+
+  # Assignment Management Endpoints
+  /tests/{testId}/assignments:
+    get:
+      tags:
+        - Assignments
+      summary: Get assignments for test
+      description: Get all assignments for a specific test
+      operationId: getAssignments
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Assignments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssignmentResponse'
+        '404':
+          description: Test not found
+
+    post:
+      tags:
+        - Assignments
+      summary: Create assignment
+      description: Create new assignment in test (teacher only)
+      operationId: createAssignment
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAssignmentRequest'
+      responses:
+        '201':
+          description: Assignment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentResponse'
+        '400':
+          description: Invalid input data
+        '404':
+          description: Test not found
+        '403':
+          description: Access denied
+
+  /tests/{testId}/assignments/{assignmentId}:
+    get:
+      tags:
+        - Assignments
+      summary: Get assignment by ID
+      description: Get assignment details
+      operationId: getAssignment
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: assignmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Assignment retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentResponse'
+        '404':
+          description: Assignment not found
+
+    put:
+      tags:
+        - Assignments
+      summary: Update assignment
+      description: Update assignment information (teacher only)
+      operationId: updateAssignment
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: assignmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAssignmentRequest'
+      responses:
+        '200':
+          description: Assignment updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentResponse'
+        '404':
+          description: Assignment not found
+        '403':
+          description: Access denied
+
+    delete:
+      tags:
+        - Assignments
+      summary: Delete assignment
+      description: Delete assignment from test (teacher only)
+      operationId: deleteAssignment
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: assignmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Assignment deleted successfully
+        '404':
+          description: Assignment not found
+        '403':
+          description: Access denied
+
+  /tests/{testId}/assignments/{assignmentId}/move:
+    patch:
+      tags:
+        - Assignments
+      summary: Move assignment
+      description: Change assignment order within test (teacher only)
+      operationId: moveAssignment
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: assignmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveAssignmentRequest'
+      responses:
+        '200':
+          description: Assignment moved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentResponse'
+        '404':
+          description: Assignment not found
+        '403':
+          description: Access denied
+
+  /tests/{testId}/assignments/{assignmentId}/duplicate:
+    post:
+      tags:
+        - Assignments
+      summary: Duplicate assignment
+      description: Create a copy of an existing assignment (teacher only)
+      operationId: duplicateAssignment
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: assignmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '201':
+          description: Assignment duplicated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentResponse'
+        '404':
+          description: Assignment not found
+        '403':
+          description: Access denied
+
+  # Test Group Management Endpoints
+  /tests/{testId}/groups:
+    get:
+      tags:
+        - Tests
+      summary: Get test groups
+      description: Get groups assigned to test
+      operationId: getTestGroups
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Groups retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TestGroupResponse'
+        '404':
+          description: Test not found
+
+    post:
+      tags:
+        - Tests
+      summary: Assign group to test
+      description: Assign a student group to test (teacher only)
+      operationId: assignGroupToTest
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignGroupRequest'
+      responses:
+        '200':
+          description: Group assigned successfully
+        '404':
+          description: Test or group not found
+        '409':
+          description: Group already assigned to test
+        '403':
+          description: Access denied
+
+  /tests/{testId}/groups/{groupId}:
+    delete:
+      tags:
+        - Tests
+      summary: Remove group from test
+      description: Remove a student group from test (teacher only)
+      operationId: removeGroupFromTest
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Group removed successfully
+        '404':
+          description: Test or group not found
+        '403':
+          description: Access denied
 
 components:
   securitySchemes:
@@ -1078,6 +1464,54 @@ components:
           type: boolean
           default: false
 
+    UpdateTestRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        timeLimit:
+          type: integer
+          minimum: 1
+          maximum: 480
+        allowNavigation:
+          type: boolean
+        randomizeOrder:
+          type: boolean
+
+    # Test Group Schemas
+    TestGroupResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        studentCount:
+          type: integer
+
+    AssignGroupRequest:
+      type: object
+      required:
+        - groupId
+      properties:
+        groupId:
+          type: integer
+          format: int64
+
     # Assignment Schemas
     Assignment:
       type: object
@@ -1116,6 +1550,230 @@ components:
               type: array
               items:
                 type: string
+
+    CreateAssignmentRequest:
+      type: object
+      required:
+        - type
+        - title
+        - points
+      properties:
+        type:
+          type: string
+          enum:
+            - SINGLE_CHOICE
+            - MULTIPLE_CHOICE
+            - OPEN_QUESTION
+            - CODING
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+        description:
+          type: string
+          maxLength: 2000
+        points:
+          type: number
+          format: float
+          minimum: 0.1
+        # Single Choice / Multiple Choice fields
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChoiceOptionRequest'
+        randomizeOptions:
+          type: boolean
+          default: false
+        # Multiple Choice only
+        partialScoring:
+          type: boolean
+          default: false
+        penaltyForWrong:
+          type: boolean
+          default: false
+        # Open Question fields
+        minLength:
+          type: integer
+          minimum: 0
+        maxLength:
+          type: integer
+          minimum: 1
+        sampleAnswer:
+          type: string
+        gradingRubric:
+          type: string
+        allowHtml:
+          type: boolean
+          default: false
+        # Coding fields
+        timeLimitMs:
+          type: integer
+          minimum: 100
+          description: Time limit in milliseconds
+        memoryLimitMb:
+          type: integer
+          minimum: 1
+          description: Memory limit in MB
+        allowedLanguages:
+          type: string
+          description: Comma-separated list of allowed languages
+        starterCode:
+          type: string
+        solutionTemplate:
+          type: string
+        testCases:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestCaseRequest'
+
+    UpdateAssignmentRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+        description:
+          type: string
+          maxLength: 2000
+        points:
+          type: number
+          format: float
+          minimum: 0.1
+
+    MoveAssignmentRequest:
+      type: object
+      required:
+        - newOrderNumber
+      properties:
+        newOrderNumber:
+          type: integer
+          minimum: 1
+
+    AssignmentResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        orderNumber:
+          type: integer
+        points:
+          type: number
+          format: float
+        isAttachmentAllowed:
+          type: boolean
+        # Single Choice / Multiple Choice fields
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChoiceOptionResponse'
+        randomizeOptions:
+          type: boolean
+        # Multiple Choice only
+        partialScoring:
+          type: boolean
+        penaltyForWrong:
+          type: boolean
+        # Open Question fields
+        minLength:
+          type: integer
+        maxLength:
+          type: integer
+        sampleAnswer:
+          type: string
+        gradingRubric:
+          type: string
+        allowHtml:
+          type: boolean
+        # Coding fields
+        timeLimitMs:
+          type: integer
+        memoryLimitMb:
+          type: integer
+        allowedLanguages:
+          type: string
+        starterCode:
+          type: string
+        solutionTemplate:
+          type: string
+        testCases:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestCaseResponse'
+
+    ChoiceOptionRequest:
+      type: object
+      required:
+        - optionText
+        - correct
+      properties:
+        optionText:
+          type: string
+          minLength: 1
+        correct:
+          type: boolean
+        orderNumber:
+          type: integer
+        explanation:
+          type: string
+
+    ChoiceOptionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        optionText:
+          type: string
+        correct:
+          type: boolean
+        orderNumber:
+          type: integer
+        explanation:
+          type: string
+
+    TestCaseRequest:
+      type: object
+      required:
+        - inputData
+        - expectedOutput
+      properties:
+        inputData:
+          type: string
+        expectedOutput:
+          type: string
+        isPublic:
+          type: boolean
+          default: false
+        description:
+          type: string
+        weight:
+          type: integer
+          default: 1
+
+    TestCaseResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        inputData:
+          type: string
+        expectedOutput:
+          type: string
+        isPublic:
+          type: boolean
+        description:
+          type: string
+        weight:
+          type: integer
 
     # Test Attempt Schemas
     TestAttempt:
