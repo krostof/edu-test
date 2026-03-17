@@ -524,6 +524,29 @@ paths:
         '403':
           description: Access denied
 
+    delete:
+      tags:
+        - Groups
+      summary: Delete group
+      description: Delete a student group (admin only)
+      operationId: deleteGroup
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Group deleted successfully
+        '404':
+          description: Group not found
+        '403':
+          description: Access denied - admin role required
+
   /groups/{groupId}/students:
     post:
       tags:

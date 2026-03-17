@@ -13,13 +13,19 @@ import org.springframework.stereotype.Component;
 public class UserMapper {
 
     public User toUser(UserEntity entity) {
-        return User.builder()
+        User user = User.builder()
                 .username(entity.getUsername())
                 .email(entity.getEmail())
                 .firstName(entity.getFirstName())
                 .lastName(entity.getLastName())
                 .role(mapToUserRole(entity.getRole()))
+                .isActive(entity.getIsActive())
+                .studentNumber(entity.getStudentNumber())
                 .build();
+        user.setId(entity.getId());
+        user.setCreatedAt(entity.getCreatedAt());
+        user.setUpdatedAt(entity.getUpdatedAt());
+        return user;
     }
     
     private UserRole mapToUserRole(UserEntityRole entityRole) {

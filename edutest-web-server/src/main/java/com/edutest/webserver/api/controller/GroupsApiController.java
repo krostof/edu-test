@@ -41,6 +41,8 @@ public class GroupsApiController implements GroupsApi {
         if (currentUser.getRole() == UserEntityRole.STUDENT) {
             Optional<StudentGroup> studentGroup = studentGroupService.findByStudent(currentUser.getId());
             groups = studentGroup.map(List::of).orElse(List.of());
+        } else if (currentUser.getRole() == UserEntityRole.ADMIN) {
+            groups = studentGroupService.findAll(org.springframework.data.domain.Pageable.unpaged()).getContent();
         } else {
             groups = studentGroupService.findByTeacher(currentUser.getId());
         }
@@ -93,6 +95,14 @@ public class GroupsApiController implements GroupsApi {
     public ResponseEntity<Void> removeStudentFromGroup(Long groupId, Long studentId) {
         log.info("Removing student {} from group {}", studentId, groupId);
         studentGroupService.removeStudentFromGroup(groupId, studentId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteGroup(Long groupId) {
+        log.info("Deleting group with id={}", groupId);
+        studentGroupService.deleteStudentGroup(groupId);
         return ResponseEntity.noContent().build();
     }
 
