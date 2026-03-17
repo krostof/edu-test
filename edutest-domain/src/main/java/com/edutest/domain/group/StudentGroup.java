@@ -23,37 +23,34 @@ public class StudentGroup {
     private User teacher;
 
     @Builder.Default
-    private List<StudentGroupMember> members = new ArrayList<>();
+    private List<User> students = new ArrayList<>();
 
     public void addStudent(User student) {
         if (student == null || !student.isStudent()) {
             throw new IllegalArgumentException("Only students can be added to groups");
         }
-
-        StudentGroupMember member = StudentGroupMember.builder()
-                .group(this)
-                .student(student)
-                .build();
-
-        members.add(member);
+        if (student.hasGroup() && !student.getStudentGroup().equals(this)) {
+            throw new IllegalStateException("Student is already in another group");
+        }
+        student.setStudentGroup(this);
+        students.add(student);
     }
 
     public void removeStudent(User student) {
-        members.removeIf(member -> member.getStudent().equals(student));
+        if (students.remove(student)) {
+            student.setStudentGroup(null);
+        }
     }
 
     public List<User> getStudents() {
-        return members.stream()
-                .map(StudentGroupMember::getStudent)
-                .toList();
+        return students;
     }
 
     public int getStudentCount() {
-        return members.size();
+        return students.size();
     }
 
     public boolean containsStudent(User student) {
-        return members.stream()
-                .anyMatch(member -> member.getStudent().equals(student));
+        return students.contains(student);
     }
 }

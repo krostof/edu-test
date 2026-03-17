@@ -47,7 +47,7 @@ public interface TestRepository extends JpaRepository<TestEntity, Integer> {
     @Query("SELECT t FROM TestEntity t WHERE t.startDate >= :startDate AND t.endDate <= :endDate")
     List<Test> findTestsByDateRange(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT DISTINCT t FROM TestEntity t JOIN t.assignedGroups g JOIN g.members m WHERE m.student.id = :#{#student.id} AND t.startDate <= CURRENT_TIMESTAMP AND t.endDate >= CURRENT_TIMESTAMP")
+    @Query("SELECT DISTINCT t FROM TestEntity t JOIN t.assignedGroups g JOIN g.students s WHERE s.id = :#{#student.id} AND t.startDate <= CURRENT_TIMESTAMP AND t.endDate >= CURRENT_TIMESTAMP")
     List<Test> findAvailableTestsForStudent(@Param("student") User student);
 
     @Query("SELECT t FROM TestEntity t JOIN t.assignedGroups g WHERE g.id = :#{#group.id}")

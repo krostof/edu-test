@@ -27,38 +27,37 @@ public class StudentGroupEntity extends BaseEntity {
     @JoinColumn(name = "teacher_id", nullable = false)
     private UserEntity teacher;
 
-    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "studentGroup", fetch = FetchType.LAZY)
     @Builder.Default
-    private List<StudentGroupMemberEntity> members = new ArrayList<>();
+    private List<UserEntity> students = new ArrayList<>();
 
     public void addStudent(UserEntity student) {
         if (student == null || !student.isStudent()) {
             throw new IllegalArgumentException("Only students can be added to groups");
         }
-
-        StudentGroupMemberEntity member = new StudentGroupMemberEntity();
-        member.setGroup(this);
-        member.setStudent(student);
-
-        members.add(member);
+        if (student.getStudentGroup() != null && !student.getStudentGroup().equals(this)) {
+            throw new IllegalStateException("Student is already in another group: " +
+                student.getStudentGroup().getName());
+        }
+        student.setStudentGroup(this);
+        students.add(student);
     }
 
     public void removeStudent(UserEntity student) {
-        members.removeIf(member -> member.getStudent().equals(student));
+        if (students.remove(student)) {
+            student.setStudentGroup(null);
+        }
     }
 
     public List<UserEntity> getStudents() {
-        return members.stream()
-                .map(StudentGroupMemberEntity::getStudent)
-                .toList();
+        return students;
     }
 
     public int getStudentCount() {
-        return members.size();
+        return students.size();
     }
 
     public boolean containsStudent(UserEntity student) {
-        return members.stream()
-                .anyMatch(member -> member.getStudent().equals(student));
+        return students.contains(student);
     }
 }

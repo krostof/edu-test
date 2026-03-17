@@ -13,10 +13,12 @@ import com.edutest.commons.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -37,7 +39,8 @@ public class GroupsApiController implements GroupsApi {
 
         List<StudentGroup> groups;
         if (currentUser.getRole() == UserEntityRole.STUDENT) {
-            groups = studentGroupService.findByStudent(currentUser.getId());
+            Optional<StudentGroup> studentGroup = studentGroupService.findByStudent(currentUser.getId());
+            groups = studentGroup.map(List::of).orElse(List.of());
         } else {
             groups = studentGroupService.findByTeacher(currentUser.getId());
         }
@@ -50,6 +53,7 @@ public class GroupsApiController implements GroupsApi {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<com.edutest.api.model.StudentGroup> createGroup(CreateGroupRequest request) {
         UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
         log.info("Creating group: name={}, teacherId={}", request.getName(), currentUser.getId());
@@ -77,10 +81,19 @@ public class GroupsApiController implements GroupsApi {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> addStudentToGroup(Long groupId, AddStudentRequest request) {
         log.info("Adding student {} to group {}", request.getStudentId(), groupId);
         studentGroupService.addStudentToGroup(groupId, request.getStudentId());
         return ResponseEntity.ok().build();
+    }
+
+    @Override
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> removeStudentFromGroup(Long groupId, Long studentId) {
+        log.info("Removing student {} from group {}", studentId, groupId);
+        studentGroupService.removeStudentFromGroup(groupId, studentId);
+        return ResponseEntity.noContent().build();
     }
 
     private com.edutest.api.model.StudentGroup toApiStudentGroup(StudentGroup domain) {

@@ -1,5 +1,6 @@
 package com.edutest.persistance.repository;
 
+import com.edutest.persistance.entity.group.StudentGroupEntity;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.entity.user.UserEntityRole;
 import org.springframework.data.domain.Page;
@@ -9,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -43,4 +45,12 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
            "LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<UserEntity> searchUsersByRole(@Param("search") String search, @Param("role") UserEntityRole role, Pageable pageable);
+
+    List<UserEntity> findByStudentGroup(StudentGroupEntity group);
+
+    @Query("SELECT u FROM UserEntity u WHERE u.studentGroup.id = :groupId AND u.role = 'STUDENT'")
+    List<UserEntity> findStudentsByGroupId(@Param("groupId") Long groupId);
+
+    @Query("SELECT u FROM UserEntity u WHERE u.studentGroup IS NULL AND u.role = 'STUDENT'")
+    List<UserEntity> findStudentsWithoutGroup();
 }

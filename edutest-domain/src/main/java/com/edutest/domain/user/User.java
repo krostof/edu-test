@@ -1,7 +1,7 @@
 package com.edutest.domain.user;
 
 import com.edutest.domain.common.DomainEntity;
-import jakarta.persistence.*;
+import com.edutest.domain.group.StudentGroup;
 import lombok.*;
 
 @Getter
@@ -25,6 +25,12 @@ public class User extends DomainEntity {
     private Boolean isActive = true;
 
     private String studentNumber;
+
+    private StudentGroup studentGroup;
+
+    public boolean hasGroup() {
+        return studentGroup != null;
+    }
 
     public String getFullName() {
         return firstName + " " + lastName;

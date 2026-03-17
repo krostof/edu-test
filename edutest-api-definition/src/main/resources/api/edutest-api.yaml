@@ -445,7 +445,7 @@ paths:
       tags:
         - Groups
       summary: Create new group
-      description: Create new student group (teacher only)
+      description: Create new student group (admin only). Only administrators can create groups.
       operationId: createGroup
       security:
         - BearerAuth: []
@@ -463,7 +463,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StudentGroup'
         '403':
-          description: Access denied - teacher role required
+          description: Access denied - admin role required
 
   /groups/{groupId}:
     get:
@@ -529,7 +529,7 @@ paths:
       tags:
         - Groups
       summary: Add student to group
-      description: Add student to group (teacher only)
+      description: Add student to group (admin only). Student can only be in one group at a time.
       operationId: addStudentToGroup
       security:
         - BearerAuth: []
@@ -552,7 +552,39 @@ paths:
         '404':
           description: Group or student not found
         '409':
-          description: Student already in group
+          description: Student is already in another group
+        '403':
+          description: Access denied - admin role required
+
+  /groups/{groupId}/students/{studentId}:
+    delete:
+      tags:
+        - Groups
+      summary: Remove student from group
+      description: Remove a student from a group (admin only)
+      operationId: removeStudentFromGroup
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Student removed from group successfully
+        '404':
+          description: Group or student not found
+        '403':
+          description: Access denied - admin role required
 
   # Test Management Endpoints
   /tests:
@@ -1112,6 +1144,13 @@ components:
           $ref: '#/components/schemas/UserRole'
         isActive:
           type: boolean
+        groupId:
+          type: integer
+          format: int64
+          description: ID of the student's group (only for students)
+        groupName:
+          type: string
+          description: Name of the student's group (only for students)
         createdAt:
           type: string
           format: date-time

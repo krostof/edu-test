@@ -26,7 +26,7 @@ public interface StudentGroupRepository {
     
     Page<StudentGroup> findByTeacher(User teacher, Pageable pageable);
     
-    List<StudentGroup> findByStudent(User student);
+    Optional<StudentGroup> findByStudent(User student);
     
     Optional<StudentGroup> findByNameAndTeacher(String name, User teacher);
     

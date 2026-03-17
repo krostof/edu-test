@@ -22,8 +22,8 @@ public interface StudentGroupJpaRepository extends JpaRepository<StudentGroupEnt
 
     Page<StudentGroupEntity> findByTeacher(UserEntity teacher, Pageable pageable);
 
-    @Query("SELECT sg FROM StudentGroupEntity sg JOIN sg.members m WHERE m.student = :student")
-    List<StudentGroupEntity> findByStudent(@Param("student") UserEntity student);
+    @Query("SELECT u.studentGroup FROM UserEntity u WHERE u = :student")
+    Optional<StudentGroupEntity> findByStudent(@Param("student") UserEntity student);
 
     Optional<StudentGroupEntity> findByNameAndTeacher(String name, UserEntity teacher);
 

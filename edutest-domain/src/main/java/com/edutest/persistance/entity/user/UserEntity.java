@@ -1,6 +1,7 @@
 package com.edutest.persistance.entity.user;
 
 import com.edutest.persistance.entity.common.BaseEntity;
+import com.edutest.persistance.entity.group.StudentGroupEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -38,6 +39,10 @@ public class UserEntity extends BaseEntity {
 
     @Column(name = "student_number", length = 20)
     private String studentNumber;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "student_group_id")
+    private StudentGroupEntity studentGroup;
 
     public String getFullName() {
         return firstName + " " + lastName;

@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,14 +68,12 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
     }
 
     @Override
-    public List<StudentGroup> findByStudent(User student) {
+    public Optional<StudentGroup> findByStudent(User student) {
         UserEntity studentEntity = userRepository.findById(student.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Student not found"));
-        
+
         return jpaRepository.findByStudent(studentEntity)
-                .stream()
-                .map(this::mapToDomain)
-                .toList();
+                .map(this::mapToDomain);
     }
 
     @Override
@@ -121,29 +120,43 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
     }
 
     private StudentGroup mapToDomain(StudentGroupEntity entity) {
-        User teacher = User.builder()
-                .username(entity.getTeacher().getUsername())
-                .email(entity.getTeacher().getEmail())
-                .firstName(entity.getTeacher().getFirstName())
-                .lastName(entity.getTeacher().getLastName())
-                .role(mapToDomainRole(entity.getTeacher().getRole()))
-                .isActive(entity.getTeacher().getIsActive())
-                .studentNumber(entity.getTeacher().getStudentNumber())
-                .build();
-        
-        teacher.setId(entity.getTeacher().getId());
-        teacher.setCreatedAt(entity.getTeacher().getCreatedAt());
-        teacher.setUpdatedAt(entity.getTeacher().getUpdatedAt());
+        User teacher = mapUserEntityToDomain(entity.getTeacher());
+
+        List<User> students = new ArrayList<>();
+        if (entity.getStudents() != null) {
+            for (UserEntity studentEntity : entity.getStudents()) {
+                students.add(mapUserEntityToDomain(studentEntity));
+            }
+        }
 
         StudentGroup domain = StudentGroup.builder()
                 .name(entity.getName())
                 .description(entity.getDescription())
                 .teacher(teacher)
+                .students(students)
                 .build();
 
         domain.setId(entity.getId());
 
         return domain;
+    }
+
+    private User mapUserEntityToDomain(UserEntity entity) {
+        User user = User.builder()
+                .username(entity.getUsername())
+                .email(entity.getEmail())
+                .firstName(entity.getFirstName())
+                .lastName(entity.getLastName())
+                .role(mapToDomainRole(entity.getRole()))
+                .isActive(entity.getIsActive())
+                .studentNumber(entity.getStudentNumber())
+                .build();
+
+        user.setId(entity.getId());
+        user.setCreatedAt(entity.getCreatedAt());
+        user.setUpdatedAt(entity.getUpdatedAt());
+
+        return user;
     }
 
     private UserRole mapToDomainRole(UserEntityRole entityRole) {

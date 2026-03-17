@@ -1,6 +1,7 @@
 package com.edutest.service.groupservice;
 
 import com.edutest.domain.group.StudentGroup;
+import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.repository.StudentGroupRepository;
 import com.edutest.domain.user.User;
 import com.edutest.persistance.repository.UserRepository;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -30,10 +32,6 @@ public class StudentGroupService {
         User teacher = userRepository.findById(teacherId)
                 .map(userMapper::toUser)
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found with id: " + teacherId));
-
-        if (!teacher.isAdmin()) {
-            throw new IllegalArgumentException("Only admins can create student groups");
-        }
 
         if (studentGroupRepository.existsByNameAndTeacher(name, teacher)) {
             throw new IllegalArgumentException("Group with name '" + name + "' already exists for this teacher");
@@ -69,12 +67,12 @@ public class StudentGroupService {
     }
 
     @Transactional(readOnly = true)
-    public List<StudentGroup> findByStudent(Long studentId) {
-        log.debug("Finding student groups by student id: {}", studentId);
+    public Optional<StudentGroup> findByStudent(Long studentId) {
+        log.debug("Finding student group by student id: {}", studentId);
         User student = userRepository.findById(studentId)
                 .map(userMapper::toUser)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found with id: " + studentId));
-        
+
         return studentGroupRepository.findByStudent(student);
     }
 
@@ -137,21 +135,26 @@ public class StudentGroupService {
         log.info("Adding student {} to group {}", studentId, groupId);
 
         StudentGroup group = findById(groupId);
-        User student = userRepository.findById(studentId)
-                .map(userMapper::toUser)
+        UserEntity studentEntity = userRepository.findById(studentId)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found with id: " + studentId));
 
-        if (!student.isStudent()) {
+        if (!studentEntity.isStudent()) {
             throw new IllegalArgumentException("User with id " + studentId + " is not a student");
         }
 
-        if (group.containsStudent(student)) {
-            throw new IllegalArgumentException("Student is already a member of this group");
+        if (studentEntity.getStudentGroup() != null) {
+            if (studentEntity.getStudentGroup().getId().equals(groupId)) {
+                throw new IllegalArgumentException("Student is already in this group");
+            }
+            throw new IllegalStateException("Student is already in group: " +
+                studentEntity.getStudentGroup().getName());
         }
 
+        User student = userMapper.toUser(studentEntity);
         group.addStudent(student);
+
         StudentGroup updatedGroup = studentGroupRepository.save(group);
-        
+
         log.info("Student {} added to group {} successfully", studentId, groupId);
         return updatedGroup;
     }
