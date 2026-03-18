@@ -15,24 +15,22 @@ import java.util.Optional;
 public interface StudentGroupRepository {
 
     StudentGroup save(StudentGroup studentGroup);
-    
+
     Optional<StudentGroup> findById(Long id);
-    
+
     List<StudentGroup> findByTeacher(User teacher);
-    
+
     Page<StudentGroup> findAll(Pageable pageable);
-    
+
     Page<StudentGroup> findByNameOrDescriptionContaining(String search, Pageable pageable);
-    
+
     Page<StudentGroup> findByTeacher(User teacher, Pageable pageable);
-    
+
     Optional<StudentGroup> findByStudent(User student);
-    
-    Optional<StudentGroup> findByNameAndTeacher(String name, User teacher);
-    
-    boolean existsByNameAndTeacher(String name, User teacher);
-    
+
+    boolean existsByName(String name);
+
     boolean existsById(Long id);
-    
+
     void deleteById(Long id);
 }

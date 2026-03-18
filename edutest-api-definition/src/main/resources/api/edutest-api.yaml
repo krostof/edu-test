@@ -156,7 +156,7 @@ paths:
             type: integer
             default: 20
             minimum: 1
-            maximum: 100
+            maximum: 1000
         - name: search
           in: query
           required: false
@@ -606,6 +606,98 @@ paths:
           description: Student removed from group successfully
         '404':
           description: Group or student not found
+        '403':
+          description: Access denied - admin role required
+
+  /groups/{groupId}/students/batch:
+    post:
+      tags:
+        - Groups
+      summary: Add multiple students to group
+      description: Add multiple students to group at once (admin only). Students can only be in one group at a time.
+      operationId: addStudentsToGroup
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddStudentsRequest'
+      responses:
+        '200':
+          description: Students added to group successfully
+        '404':
+          description: Group or student not found
+        '409':
+          description: One or more students are already in another group
+        '403':
+          description: Access denied - admin role required
+
+  /groups/{groupId}/teachers:
+    post:
+      tags:
+        - Groups
+      summary: Add teacher to group
+      description: Add a teacher to group (admin only)
+      operationId: addTeacherToGroup
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddTeacherRequest'
+      responses:
+        '200':
+          description: Teacher added to group successfully
+        '404':
+          description: Group or teacher not found
+        '403':
+          description: Access denied - admin role required
+
+  /groups/{groupId}/teachers/{teacherId}:
+    delete:
+      tags:
+        - Groups
+      summary: Remove teacher from group
+      description: Remove a teacher from a group (admin only)
+      operationId: removeTeacherFromGroup
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: teacherId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Teacher removed from group successfully
+        '404':
+          description: Group or teacher not found
         '403':
           description: Access denied - admin role required
 
@@ -1412,8 +1504,10 @@ components:
         createdAt:
           type: string
           format: date-time
-        teacher:
-          $ref: '#/components/schemas/UserProfile'
+        teachers:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserProfile'
 
     StudentGroupDetails:
       allOf:
@@ -1429,6 +1523,7 @@ components:
       type: object
       required:
         - name
+        - teacherIds
       properties:
         name:
           type: string
@@ -1437,6 +1532,13 @@ components:
         description:
           type: string
           maxLength: 500
+        teacherIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          minItems: 1
+          description: IDs of teachers to assign to this group
 
     UpdateGroupRequest:
       type: object
@@ -1455,6 +1557,28 @@ components:
         - studentId
       properties:
         studentId:
+          type: integer
+          format: int64
+
+    AddStudentsRequest:
+      type: object
+      required:
+        - studentIds
+      properties:
+        studentIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          minItems: 1
+          description: IDs of students to add to the group
+
+    AddTeacherRequest:
+      type: object
+      required:
+        - teacherId
+      properties:
+        teacherId:
           type: integer
           format: int64
 

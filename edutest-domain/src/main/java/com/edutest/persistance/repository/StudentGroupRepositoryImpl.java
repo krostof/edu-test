@@ -24,7 +24,32 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
 
     @Override
     public StudentGroup save(StudentGroup studentGroup) {
-        StudentGroupEntity entity = mapToEntity(studentGroup);
+        StudentGroupEntity entity;
+
+        if (studentGroup.getId() != null) {
+            entity = jpaRepository.findById(studentGroup.getId())
+                    .orElse(new StudentGroupEntity());
+        } else {
+            entity = new StudentGroupEntity();
+        }
+
+        entity.setName(studentGroup.getName());
+        entity.setDescription(studentGroup.getDescription());
+
+        if (studentGroup.getId() != null) {
+            entity.setId(studentGroup.getId());
+        }
+
+        // Map teachers
+        List<UserEntity> teacherEntities = new ArrayList<>();
+        for (User teacher : studentGroup.getTeachers()) {
+            UserEntity teacherEntity = userRepository.findById(teacher.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Teacher not found: " + teacher.getId()));
+            teacherEntities.add(teacherEntity);
+        }
+        entity.getTeachers().clear();
+        entity.getTeachers().addAll(teacherEntities);
+
         StudentGroupEntity savedEntity = jpaRepository.save(entity);
         return mapToDomain(savedEntity);
     }
@@ -39,7 +64,7 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
     public List<StudentGroup> findByTeacher(User teacher) {
         UserEntity teacherEntity = userRepository.findById(teacher.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found"));
-        
+
         return jpaRepository.findByTeacher(teacherEntity)
                 .stream()
                 .map(this::mapToDomain)
@@ -62,7 +87,7 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
     public Page<StudentGroup> findByTeacher(User teacher, Pageable pageable) {
         UserEntity teacherEntity = userRepository.findById(teacher.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found"));
-        
+
         return jpaRepository.findByTeacher(teacherEntity, pageable)
                 .map(this::mapToDomain);
     }
@@ -77,20 +102,8 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
     }
 
     @Override
-    public Optional<StudentGroup> findByNameAndTeacher(String name, User teacher) {
-        UserEntity teacherEntity = userRepository.findById(teacher.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Teacher not found"));
-        
-        return jpaRepository.findByNameAndTeacher(name, teacherEntity)
-                .map(this::mapToDomain);
-    }
-
-    @Override
-    public boolean existsByNameAndTeacher(String name, User teacher) {
-        UserEntity teacherEntity = userRepository.findById(teacher.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Teacher not found"));
-        
-        return jpaRepository.existsByNameAndTeacher(name, teacherEntity);
+    public boolean existsByName(String name) {
+        return jpaRepository.existsByName(name);
     }
 
     @Override
@@ -103,24 +116,13 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
         jpaRepository.deleteById(id);
     }
 
-    private StudentGroupEntity mapToEntity(StudentGroup domain) {
-        UserEntity teacherEntity = userRepository.findById(domain.getTeacher().getId())
-                .orElseThrow(() -> new IllegalArgumentException("Teacher not found"));
-
-        StudentGroupEntity entity = new StudentGroupEntity();
-        entity.setName(domain.getName());
-        entity.setDescription(domain.getDescription());
-        entity.setTeacher(teacherEntity);
-
-        if (domain.getId() != null) {
-            entity.setId(domain.getId());
-        }
-
-        return entity;
-    }
-
     private StudentGroup mapToDomain(StudentGroupEntity entity) {
-        User teacher = mapUserEntityToDomain(entity.getTeacher());
+        List<User> teachers = new ArrayList<>();
+        if (entity.getTeachers() != null) {
+            for (UserEntity teacherEntity : entity.getTeachers()) {
+                teachers.add(mapUserEntityToDomain(teacherEntity));
+            }
+        }
 
         List<User> students = new ArrayList<>();
         if (entity.getStudents() != null) {
@@ -132,7 +134,7 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
         StudentGroup domain = StudentGroup.builder()
                 .name(entity.getName())
                 .description(entity.getDescription())
-                .teacher(teacher)
+                .teachers(teachers)
                 .students(students)
                 .build();
 

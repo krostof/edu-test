@@ -20,10 +20,32 @@ public class StudentGroup {
 
     private String description;
 
-    private User teacher;
+    @Builder.Default
+    private List<User> teachers = new ArrayList<>();
 
     @Builder.Default
     private List<User> students = new ArrayList<>();
+
+    public void addTeacher(User teacher) {
+        if (teacher == null || !teacher.isTeacher()) {
+            throw new IllegalArgumentException("Only teachers can be added as group teachers");
+        }
+        if (!teachers.contains(teacher)) {
+            teachers.add(teacher);
+        }
+    }
+
+    public void removeTeacher(User teacher) {
+        teachers.remove(teacher);
+    }
+
+    public boolean hasTeacher(User teacher) {
+        return teachers.contains(teacher);
+    }
+
+    public int getTeacherCount() {
+        return teachers.size();
+    }
 
     public void addStudent(User student) {
         if (student == null || !student.isStudent()) {

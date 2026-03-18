@@ -57,11 +57,10 @@ public class GroupsApiController implements GroupsApi {
     @Override
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<com.edutest.api.model.StudentGroup> createGroup(CreateGroupRequest request) {
-        UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
-        log.info("Creating group: name={}, teacherId={}", request.getName(), currentUser.getId());
+        log.info("Creating group: name={}, teacherIds={}", request.getName(), request.getTeacherIds());
 
         StudentGroup created = studentGroupService.createStudentGroup(
-                request.getName(), request.getDescription(), currentUser.getId());
+                request.getName(), request.getDescription(), request.getTeacherIds());
 
         log.info("Group created with id={}", created.getId());
         return ResponseEntity.status(201).body(toApiStudentGroup(created));
@@ -75,6 +74,7 @@ public class GroupsApiController implements GroupsApi {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<com.edutest.api.model.StudentGroup> updateGroup(Long groupId, UpdateGroupRequest request) {
         log.info("Updating group id={}", groupId);
         StudentGroup updated = studentGroupService.updateStudentGroup(
@@ -84,9 +84,43 @@ public class GroupsApiController implements GroupsApi {
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteGroup(Long groupId) {
+        log.info("Deleting group with id={}", groupId);
+        studentGroupService.deleteStudentGroup(groupId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // Teacher management
+    @Override
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> addTeacherToGroup(Long groupId, AddTeacherRequest request) {
+        log.info("Adding teacher {} to group {}", request.getTeacherId(), groupId);
+        studentGroupService.addTeacherToGroup(groupId, request.getTeacherId());
+        return ResponseEntity.ok().build();
+    }
+
+    @Override
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> removeTeacherFromGroup(Long groupId, Long teacherId) {
+        log.info("Removing teacher {} from group {}", teacherId, groupId);
+        studentGroupService.removeTeacherFromGroup(groupId, teacherId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // Student management
+    @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> addStudentToGroup(Long groupId, AddStudentRequest request) {
         log.info("Adding student {} to group {}", request.getStudentId(), groupId);
         studentGroupService.addStudentToGroup(groupId, request.getStudentId());
+        return ResponseEntity.ok().build();
+    }
+
+    @Override
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> addStudentsToGroup(Long groupId, AddStudentsRequest request) {
+        log.info("Adding {} students to group {}", request.getStudentIds().size(), groupId);
+        studentGroupService.addStudentsToGroup(groupId, request.getStudentIds());
         return ResponseEntity.ok().build();
     }
 
@@ -98,22 +132,17 @@ public class GroupsApiController implements GroupsApi {
         return ResponseEntity.noContent().build();
     }
 
-    @Override
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteGroup(Long groupId) {
-        log.info("Deleting group with id={}", groupId);
-        studentGroupService.deleteStudentGroup(groupId);
-        return ResponseEntity.noContent().build();
-    }
-
     private com.edutest.api.model.StudentGroup toApiStudentGroup(StudentGroup domain) {
         com.edutest.api.model.StudentGroup api = new com.edutest.api.model.StudentGroup();
         api.setId(domain.getId());
         api.setName(domain.getName());
         api.setDescription(domain.getDescription());
 
-        if (domain.getTeacher() != null) {
-            api.setTeacher(toApiUserProfile(domain.getTeacher()));
+        if (domain.getTeachers() != null) {
+            List<UserProfile> teacherProfiles = domain.getTeachers().stream()
+                    .map(this::toApiUserProfile)
+                    .collect(Collectors.toList());
+            api.setTeachers(teacherProfiles);
         }
 
         return api;
@@ -125,8 +154,11 @@ public class GroupsApiController implements GroupsApi {
         details.setName(domain.getName());
         details.setDescription(domain.getDescription());
 
-        if (domain.getTeacher() != null) {
-            details.setTeacher(toApiUserProfile(domain.getTeacher()));
+        if (domain.getTeachers() != null) {
+            List<UserProfile> teacherProfiles = domain.getTeachers().stream()
+                    .map(this::toApiUserProfile)
+                    .collect(Collectors.toList());
+            details.setTeachers(teacherProfiles);
         }
 
         if (domain.getStudents() != null) {
@@ -141,15 +173,12 @@ public class GroupsApiController implements GroupsApi {
 
     private UserProfile toApiUserProfile(User user) {
         UserProfile profile = new UserProfile();
+        profile.setId(user.getId());
         profile.setUsername(user.getUsername());
         profile.setEmail(user.getEmail());
         profile.setFirstName(user.getFirstName());
         profile.setLastName(user.getLastName());
-
-        userRepository.findByUsername(user.getUsername()).ifPresent(entity -> {
-            profile.setId(entity.getId());
-            profile.setIsActive(entity.getIsActive());
-        });
+        profile.setIsActive(user.getIsActive());
 
         return profile;
     }

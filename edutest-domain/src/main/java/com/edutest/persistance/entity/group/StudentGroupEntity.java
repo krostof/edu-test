@@ -23,13 +23,35 @@ public class StudentGroupEntity extends BaseEntity {
     @Column(name = "description", length = 500)
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "teacher_id", nullable = false)
-    private UserEntity teacher;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "group_teachers",
+        joinColumns = @JoinColumn(name = "group_id"),
+        inverseJoinColumns = @JoinColumn(name = "teacher_id")
+    )
+    @Builder.Default
+    private List<UserEntity> teachers = new ArrayList<>();
 
     @OneToMany(mappedBy = "studentGroup", fetch = FetchType.LAZY)
     @Builder.Default
     private List<UserEntity> students = new ArrayList<>();
+
+    public void addTeacher(UserEntity teacher) {
+        if (teacher == null || !teacher.isTeacher()) {
+            throw new IllegalArgumentException("Only teachers can be added as group teachers");
+        }
+        if (!teachers.contains(teacher)) {
+            teachers.add(teacher);
+        }
+    }
+
+    public void removeTeacher(UserEntity teacher) {
+        teachers.remove(teacher);
+    }
+
+    public boolean hasTeacher(UserEntity teacher) {
+        return teachers.contains(teacher);
+    }
 
     public void addStudent(UserEntity student) {
         if (student == null || !student.isStudent()) {
@@ -59,5 +81,9 @@ public class StudentGroupEntity extends BaseEntity {
 
     public boolean containsStudent(UserEntity student) {
         return students.contains(student);
+    }
+
+    public int getTeacherCount() {
+        return teachers.size();
     }
 }

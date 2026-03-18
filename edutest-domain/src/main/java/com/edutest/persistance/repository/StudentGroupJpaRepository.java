@@ -15,17 +15,17 @@ import java.util.Optional;
 @Repository
 public interface StudentGroupJpaRepository extends JpaRepository<StudentGroupEntity, Long> {
 
-    List<StudentGroupEntity> findByTeacher(UserEntity teacher);
+    @Query("SELECT sg FROM StudentGroupEntity sg JOIN sg.teachers t WHERE t = :teacher")
+    List<StudentGroupEntity> findByTeacher(@Param("teacher") UserEntity teacher);
 
     @Query("SELECT sg FROM StudentGroupEntity sg WHERE sg.name ILIKE %:search% OR sg.description ILIKE %:search%")
     Page<StudentGroupEntity> findByNameOrDescriptionContaining(@Param("search") String search, Pageable pageable);
 
-    Page<StudentGroupEntity> findByTeacher(UserEntity teacher, Pageable pageable);
+    @Query("SELECT sg FROM StudentGroupEntity sg JOIN sg.teachers t WHERE t = :teacher")
+    Page<StudentGroupEntity> findByTeacher(@Param("teacher") UserEntity teacher, Pageable pageable);
 
     @Query("SELECT u.studentGroup FROM UserEntity u WHERE u = :student")
     Optional<StudentGroupEntity> findByStudent(@Param("student") UserEntity student);
 
-    Optional<StudentGroupEntity> findByNameAndTeacher(String name, UserEntity teacher);
-
-    boolean existsByNameAndTeacher(String name, UserEntity teacher);
+    boolean existsByName(String name);
 }
