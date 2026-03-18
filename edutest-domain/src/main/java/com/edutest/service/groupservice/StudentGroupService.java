@@ -35,15 +35,17 @@ public class StudentGroupService {
         }
 
         List<User> teachers = new ArrayList<>();
-        for (Long teacherId : teacherIds) {
-            User teacher = userRepository.findById(teacherId)
-                    .map(userMapper::toUser)
-                    .orElseThrow(() -> new IllegalArgumentException("Teacher not found with id: " + teacherId));
+        if (teacherIds != null) {
+            for (Long teacherId : teacherIds) {
+                User teacher = userRepository.findById(teacherId)
+                        .map(userMapper::toUser)
+                        .orElseThrow(() -> new IllegalArgumentException("Teacher not found with id: " + teacherId));
 
-            if (!teacher.isTeacher()) {
-                throw new IllegalArgumentException("User with id " + teacherId + " is not a teacher");
+                if (!teacher.isTeacher()) {
+                    throw new IllegalArgumentException("User with id " + teacherId + " is not a teacher");
+                }
+                teachers.add(teacher);
             }
-            teachers.add(teacher);
         }
 
         StudentGroup studentGroup = StudentGroup.builder()

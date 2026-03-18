@@ -29,7 +29,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     
     Page<UserEntity> findByRole(UserEntityRole role, Pageable pageable);
 
-    @Query("SELECT COUNT(sg) FROM StudentGroupEntity sg WHERE sg.teacher.id = :teacherId")
+    @Query("SELECT COUNT(DISTINCT sg) FROM StudentGroupEntity sg JOIN sg.teachers t WHERE t.id = :teacherId")
     long countGroupsByTeacherId(@Param("teacherId") Long teacherId);
 
     @Query("SELECT u FROM UserEntity u WHERE " +

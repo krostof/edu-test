@@ -1523,7 +1523,6 @@ components:
       type: object
       required:
         - name
-        - teacherIds
       properties:
         name:
           type: string
@@ -1537,8 +1536,7 @@ components:
           items:
             type: integer
             format: int64
-          minItems: 1
-          description: IDs of teachers to assign to this group
+          description: IDs of teachers to assign to this group (optional)
 
     UpdateGroupRequest:
       type: object
