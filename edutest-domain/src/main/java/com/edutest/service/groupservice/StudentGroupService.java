@@ -2,6 +2,7 @@ package com.edutest.service.groupservice;
 
 import com.edutest.domain.group.StudentGroup;
 import com.edutest.persistance.entity.user.UserEntity;
+import com.edutest.persistance.repository.StudentGroupJpaRepository;
 import com.edutest.persistance.repository.StudentGroupRepository;
 import com.edutest.domain.user.User;
 import com.edutest.persistance.repository.UserRepository;
@@ -24,6 +25,7 @@ import java.util.Optional;
 public class StudentGroupService {
 
     private final StudentGroupRepository studentGroupRepository;
+    private final StudentGroupJpaRepository studentGroupJpaRepository;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
@@ -205,19 +207,22 @@ public class StudentGroupService {
                 studentEntity.getStudentGroup().getName());
         }
 
-        User student = userMapper.toUser(studentEntity);
-        group.addStudent(student);
-
-        StudentGroup updatedGroup = studentGroupRepository.save(group);
+        // Update the owning side of the relationship (UserEntity.studentGroup)
+        studentEntity.setStudentGroup(
+            studentGroupJpaRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found with id: " + groupId))
+        );
+        userRepository.save(studentEntity);
 
         log.info("Student {} added to group {} successfully", studentId, groupId);
-        return updatedGroup;
+        return findById(groupId); // Reload to get updated students list
     }
 
     public StudentGroup addStudentsToGroup(Long groupId, List<Long> studentIds) {
         log.info("Adding {} students to group {}", studentIds.size(), groupId);
 
-        StudentGroup group = findById(groupId);
+        var groupEntity = studentGroupJpaRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found with id: " + groupId));
 
         for (Long studentId : studentIds) {
             UserEntity studentEntity = userRepository.findById(studentId)
@@ -236,33 +241,31 @@ public class StudentGroupService {
                     studentEntity.getStudentGroup().getName());
             }
 
-            User student = userMapper.toUser(studentEntity);
-            group.addStudent(student);
+            // Update the owning side of the relationship
+            studentEntity.setStudentGroup(groupEntity);
+            userRepository.save(studentEntity);
         }
 
-        StudentGroup updatedGroup = studentGroupRepository.save(group);
-
         log.info("{} students added to group {} successfully", studentIds.size(), groupId);
-        return updatedGroup;
+        return findById(groupId); // Reload to get updated students list
     }
 
     public StudentGroup removeStudentFromGroup(Long groupId, Long studentId) {
         log.info("Removing student {} from group {}", studentId, groupId);
 
-        StudentGroup group = findById(groupId);
-        User student = userRepository.findById(studentId)
-                .map(userMapper::toUser)
+        UserEntity studentEntity = userRepository.findById(studentId)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found with id: " + studentId));
 
-        if (!group.containsStudent(student)) {
+        if (studentEntity.getStudentGroup() == null || !studentEntity.getStudentGroup().getId().equals(groupId)) {
             throw new IllegalArgumentException("Student is not a member of this group");
         }
 
-        group.removeStudent(student);
-        StudentGroup updatedGroup = studentGroupRepository.save(group);
+        // Update the owning side of the relationship
+        studentEntity.setStudentGroup(null);
+        userRepository.save(studentEntity);
 
         log.info("Student {} removed from group {} successfully", studentId, groupId);
-        return updatedGroup;
+        return findById(groupId); // Reload to get updated students list
     }
 
     @Transactional(readOnly = true)
