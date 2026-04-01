@@ -51,7 +51,21 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
     @Override
     public Optional<Assignment> findById(Long id) {
         return jpaRepository.findById(id)
-                .map(this::mapToDomain);
+                .map(entity -> {
+                    // Initialize lazy collections before mapping to domain
+                    initializeLazyCollections(entity);
+                    return mapToDomain(entity);
+                });
+    }
+
+    private void initializeLazyCollections(AssignmentEntity entity) {
+        if (entity instanceof SingleChoiceAssignmentEntityEntity single) {
+            single.getOptions().size(); // Force initialization
+        } else if (entity instanceof MultipleChoiceAssignmentEntity multiple) {
+            multiple.getOptions().size(); // Force initialization
+        } else if (entity instanceof CodingAssignmentEntity coding) {
+            coding.getTestCases().size(); // Force initialization
+        }
     }
 
     @Override

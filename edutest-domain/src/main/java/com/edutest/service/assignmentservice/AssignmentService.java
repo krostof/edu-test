@@ -337,24 +337,26 @@ public class AssignmentService {
 
     private Assignment createDuplicateAssignment(Assignment original, Integer newOrderNumber) {
         if (original instanceof SingleChoiceAssignment single) {
+            List<ChoiceOption> duplicatedOptions = duplicateChoiceOptions(single.getOptions());
             return SingleChoiceAssignment.builder()
                     .testId(single.getTestId())
                     .title(single.getTitle() + " (Copy)")
                     .description(single.getDescription())
                     .points(single.getPoints())
                     .orderNumber(newOrderNumber)
-                    .options(single.getOptions())
+                    .options(duplicatedOptions)
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
                     .build();
         } else if (original instanceof MultipleChoiceAssignment multiple) {
+            List<ChoiceOption> duplicatedOptions = duplicateChoiceOptions(multiple.getOptions());
             return MultipleChoiceAssignment.builder()
                     .testId(multiple.getTestId())
                     .title(multiple.getTitle() + " (Copy)")
                     .description(multiple.getDescription())
                     .points(multiple.getPoints())
                     .orderNumber(newOrderNumber)
-                    .options(multiple.getOptions())
+                    .options(duplicatedOptions)
                     .randomizeOptions(multiple.isRandomizeOptions())
                     .partialScoring(multiple.isPartialScoring())
                     .penaltyForWrong(multiple.isPenaltyForWrong())
@@ -373,6 +375,7 @@ public class AssignmentService {
                     .updatedAt(LocalDateTime.now())
                     .build();
         } else if (original instanceof CodingAssignment coding) {
+            List<TestCase> duplicatedTestCases = duplicateTestCases(coding.getTestCases());
             return CodingAssignment.builder()
                     .testId(coding.getTestId())
                     .title(coding.getTitle() + " (Copy)")
@@ -384,12 +387,41 @@ public class AssignmentService {
                     .allowedLanguages(coding.getAllowedLanguages())
                     .starterCode(coding.getStarterCode())
                     .solutionTemplate(coding.getSolutionTemplate())
-                    .testCases(coding.getTestCases())
+                    .testCases(duplicatedTestCases)
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
                     .build();
         }
-        
+
         throw new IllegalArgumentException("Unknown assignment type: " + original.getClass().getSimpleName());
+    }
+
+    private List<ChoiceOption> duplicateChoiceOptions(List<ChoiceOption> options) {
+        if (options == null) {
+            return List.of();
+        }
+        return options.stream()
+                .map(opt -> ChoiceOption.builder()
+                        .optionText(opt.getOptionText())
+                        .correct(opt.isCorrect())
+                        .orderNumber(opt.getOrderNumber())
+                        .explanation(opt.getExplanation())
+                        .build())
+                .toList();
+    }
+
+    private List<TestCase> duplicateTestCases(List<TestCase> testCases) {
+        if (testCases == null) {
+            return List.of();
+        }
+        return testCases.stream()
+                .map(tc -> TestCase.builder()
+                        .inputData(tc.getInputData())
+                        .expectedOutput(tc.getExpectedOutput())
+                        .isPublic(tc.getIsPublic())
+                        .description(tc.getDescription())
+                        .weight(tc.getWeight())
+                        .build())
+                .toList();
     }
 }

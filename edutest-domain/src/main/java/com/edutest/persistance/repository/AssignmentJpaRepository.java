@@ -28,6 +28,9 @@ public interface AssignmentJpaRepository extends JpaRepository<AssignmentEntity,
     @Query("SELECT a FROM AssignmentEntity a WHERE a.testEntity.id = :testId AND a.orderNumber = :orderNumber")
     Optional<AssignmentEntity> findByTestIdAndOrderNumber(@Param("testId") Long testId, @Param("orderNumber") Integer orderNumber);
 
+    @Query("SELECT DISTINCT a FROM AssignmentEntity a LEFT JOIN FETCH a.testEntity WHERE a.id = :id")
+    Optional<AssignmentEntity> findByIdWithDetails(@Param("id") Long id);
+
     @Query("SELECT a FROM AssignmentEntity a WHERE a.title ILIKE %:search% OR a.description ILIKE %:search%")
     Page<AssignmentEntity> findByTitleOrDescriptionContaining(@Param("search") String searchTerm, Pageable pageable);
 
