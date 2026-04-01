@@ -5,11 +5,14 @@ import com.edutest.api.model.TestAttempt;
 import com.edutest.api.model.TestDetails;
 import com.edutest.api.model.UserProfile;
 import com.edutest.domain.user.User;
+import com.edutest.persistance.entity.test.TestEntity;
+import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 @Component
@@ -19,6 +22,57 @@ public class TestMapper {
     private final UserMapper userMapper;
     private final AssignmentMapper assignmentMapper;
     private final UserRepository userRepository;
+
+    /**
+     * Maps a TestEntity to a domain Test object.
+     */
+    public com.edutest.domain.test.Test toDomain(TestEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+
+        com.edutest.domain.test.Test test = com.edutest.domain.test.Test.builder()
+                .title(entity.getTitle())
+                .description(entity.getDescription())
+                .startDate(entity.getStartDate())
+                .endDate(entity.getEndDate())
+                .timeLimit(entity.getTimeLimit())
+                .allowNavigation(entity.getAllowNavigation())
+                .randomizeOrder(entity.getRandomizeOrder())
+                .createdBy(entity.getCreatedBy() != null ? userMapper.toUser(entity.getCreatedBy()) : null)
+                .assignedGroups(new ArrayList<>())
+                .assignments(new ArrayList<>())
+                .attempts(new ArrayList<>())
+                .build();
+        test.setId(entity.getId());
+        test.setCreatedAt(entity.getCreatedAt());
+        test.setUpdatedAt(entity.getUpdatedAt());
+        return test;
+    }
+
+    /**
+     * Maps a domain Test to a TestEntity.
+     */
+    public TestEntity toEntity(com.edutest.domain.test.Test domain, UserEntity createdByEntity) {
+        if (domain == null) {
+            return null;
+        }
+
+        TestEntity entity = TestEntity.builder()
+                .title(domain.getTitle())
+                .description(domain.getDescription())
+                .startDate(domain.getStartDate())
+                .endDate(domain.getEndDate())
+                .timeLimit(domain.getTimeLimit())
+                .allowNavigation(domain.getAllowNavigation())
+                .randomizeOrder(domain.getRandomizeOrder())
+                .createdBy(createdByEntity)
+                .build();
+        if (domain.getId() != null) {
+            entity.setId(domain.getId());
+        }
+        return entity;
+    }
 
     public Test toApiTest(com.edutest.domain.test.Test domain) {
         Test api = new Test();

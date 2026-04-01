@@ -10,6 +10,7 @@ import com.edutest.domain.assignment.common.ChoiceOption;
 import com.edutest.domain.test.Test;
 import com.edutest.persistance.repository.AssignmentRepository;
 import com.edutest.persistance.repository.TestRepository;
+import com.edutest.util.TestMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -28,6 +29,7 @@ public class AssignmentService {
 
     private final AssignmentRepository assignmentRepository;
     private final TestRepository testRepository;
+    private final TestMapper testMapper;
 
     public SingleChoiceAssignment createSingleChoiceAssignment(Long testId, String title, String description, 
                                                              Float points, List<ChoiceOption> options) {
@@ -283,6 +285,7 @@ public class AssignmentService {
 
     private Test getTestById(Long testId) {
         return testRepository.findById(testId)
+                .map(testMapper::toDomain)
                 .orElseThrow(() -> new IllegalArgumentException("Test not found with id: " + testId));
     }
 

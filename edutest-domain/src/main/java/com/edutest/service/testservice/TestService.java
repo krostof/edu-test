@@ -4,10 +4,13 @@ import com.edutest.domain.test.Test;
 import com.edutest.domain.test.TestAttempt;
 import com.edutest.domain.user.User;
 import com.edutest.domain.group.StudentGroup;
+import com.edutest.persistance.entity.group.StudentGroupEntity;
 import com.edutest.persistance.entity.test.TestEntity;
+import com.edutest.persistance.entity.user.UserEntity;
+import com.edutest.persistance.repository.StudentGroupJpaRepository;
 import com.edutest.persistance.repository.TestRepository;
 import com.edutest.persistance.repository.UserRepository;
-import com.edutest.persistance.repository.StudentGroupRepository;
+import com.edutest.util.TestMapper;
 import com.edutest.util.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -27,30 +31,31 @@ public class TestService {
 
     private final TestRepository testRepository;
     private final UserRepository userRepository;
-    private final StudentGroupRepository studentGroupRepository;
+    private final StudentGroupJpaRepository studentGroupJpaRepository;
     private final UserMapper userMapper;
+    private final TestMapper testMapper;
 
-    public Test createTest(String title, String description, LocalDateTime startDate, 
-                          LocalDateTime endDate, Integer timeLimit, Boolean allowNavigation, 
+    public Test createTest(String title, String description, LocalDateTime startDate,
+                          LocalDateTime endDate, Integer timeLimit, Boolean allowNavigation,
                           Boolean randomizeOrder, Long createdById) {
-        
+
         log.info("Creating test: title={}, createdById={}", title, createdById);
 
-        User creator = userRepository.findById(createdById)
-                .map(userMapper::toUser)
+        UserEntity creatorEntity = userRepository.findById(createdById)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found with id: " + createdById));
 
+        User creator = userMapper.toUser(creatorEntity);
         if (!creator.isTeacher() && !creator.isAdmin()) {
             throw new IllegalArgumentException("Only teachers and admins can create tests");
         }
 
         validateTestDates(startDate, endDate);
 
-        if (testRepository.existsByTitleAndCreatedBy(title, creator)) {
+        if (testRepository.existsByTitleAndCreatedBy(title, creatorEntity)) {
             throw new IllegalArgumentException("Test with title '" + title + "' already exists for this user");
         }
 
-        Test test = Test.builder()
+        TestEntity testEntity = TestEntity.builder()
                 .title(title)
                 .description(description)
                 .startDate(startDate)
@@ -58,40 +63,42 @@ public class TestService {
                 .timeLimit(timeLimit)
                 .allowNavigation(allowNavigation != null ? allowNavigation : true)
                 .randomizeOrder(randomizeOrder != null ? randomizeOrder : false)
-                .createdBy(creator)
+                .createdBy(creatorEntity)
                 .build();
 
-        Test savedTest = testRepository.save(test);
-        log.info("Test created successfully with id={}", savedTest.getId());
+        TestEntity savedEntity = testRepository.save(testEntity);
+        log.info("Test created successfully with id={}", savedEntity.getId());
 
-        return savedTest;
+        return testMapper.toDomain(savedEntity);
     }
 
     @Transactional(readOnly = true)
     public Test findById(Long id) {
         log.debug("Finding test by id: {}", id);
         return testRepository.findById(id)
+                .map(testMapper::toDomain)
                 .orElseThrow(() -> new IllegalArgumentException("Test not found with id: " + id));
     }
 
     @Transactional(readOnly = true)
     public List<Test> findByCreatedBy(Long createdById) {
         log.debug("Finding tests by creator id: {}", createdById);
-        User creator = userRepository.findById(createdById)
-                .map(userMapper::toUser)
+        UserEntity creatorEntity = userRepository.findById(createdById)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found with id: " + createdById));
-        
-        return testRepository.findByCreatedBy(creator);
+
+        return testRepository.findByCreatedBy(creatorEntity).stream()
+                .map(testMapper::toDomain)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public Page<Test> findByCreatedBy(Long createdById, Pageable pageable) {
         log.debug("Finding tests by creator id: {} with pagination", createdById);
-        User creator = userRepository.findById(createdById)
-                .map(userMapper::toUser)
+        UserEntity creatorEntity = userRepository.findById(createdById)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found with id: " + createdById));
-        
-        return testRepository.findByCreatedBy(creator, pageable);
+
+        return testRepository.findByCreatedBy(creatorEntity, pageable)
+                .map(testMapper::toDomain);
     }
 
     @Transactional(readOnly = true)
@@ -103,105 +110,119 @@ public class TestService {
     @Transactional(readOnly = true)
     public List<Test> findActiveTests() {
         log.debug("Finding active tests");
-        return testRepository.findActiveTests();
+        return testRepository.findActiveTests().stream()
+                .map(testMapper::toDomain)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<Test> findUpcomingTests() {
         log.debug("Finding upcoming tests");
-        return testRepository.findUpcomingTests();
+        return testRepository.findUpcomingTests().stream()
+                .map(testMapper::toDomain)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<Test> findExpiredTests() {
         log.debug("Finding expired tests");
-        return testRepository.findExpiredTests();
+        return testRepository.findExpiredTests().stream()
+                .map(testMapper::toDomain)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<Test> findAvailableTestsForStudent(Long studentId) {
         log.debug("Finding available tests for student: {}", studentId);
-        User student = userRepository.findById(studentId)
-                .map(userMapper::toUser)
+        UserEntity studentEntity = userRepository.findById(studentId)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found with id: " + studentId));
 
+        User student = userMapper.toUser(studentEntity);
         if (!student.isStudent()) {
             throw new IllegalArgumentException("User with id " + studentId + " is not a student");
         }
 
-        return testRepository.findAvailableTestsForStudent(student);
+        return testRepository.findAvailableTestsForStudent(studentId).stream()
+                .map(testMapper::toDomain)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<Test> findTestsByGroup(Long groupId) {
         log.debug("Finding tests by group: {}", groupId);
-        StudentGroup group = studentGroupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found with id: " + groupId));
-        
-        return testRepository.findTestsByGroup(group);
+        if (!studentGroupJpaRepository.existsById(groupId)) {
+            throw new IllegalArgumentException("Group not found with id: " + groupId);
+        }
+
+        return testRepository.findTestsByGroupId(groupId).stream()
+                .map(testMapper::toDomain)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public Page<Test> searchTests(String searchTerm, Pageable pageable) {
         log.debug("Searching tests with term: {}", searchTerm);
-        return testRepository.findByTitleOrDescriptionContaining(searchTerm, pageable);
+        return testRepository.findByTitleOrDescriptionContaining(searchTerm, pageable)
+                .map(testMapper::toDomain);
     }
 
-    public Test updateTest(Long id, String title, String description, LocalDateTime startDate, 
-                          LocalDateTime endDate, Integer timeLimit, Boolean allowNavigation, 
+    public Test updateTest(Long id, String title, String description, LocalDateTime startDate,
+                          LocalDateTime endDate, Integer timeLimit, Boolean allowNavigation,
                           Boolean randomizeOrder) {
-        
+
         log.info("Updating test: id={}", id);
 
-        Test existingTest = findById(id);
+        TestEntity existingEntity = testRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Test not found with id: " + id));
 
-        if (title != null && !title.equals(existingTest.getTitle())) {
-            if (testRepository.existsByTitleAndCreatedBy(title, existingTest.getCreatedBy())) {
+        if (title != null && !title.equals(existingEntity.getTitle())) {
+            if (testRepository.existsByTitleAndCreatedBy(title, existingEntity.getCreatedBy())) {
                 throw new IllegalArgumentException("Test with title '" + title + "' already exists for this user");
             }
-            existingTest.setTitle(title);
+            existingEntity.setTitle(title);
         }
 
         if (description != null) {
-            existingTest.setDescription(description);
+            existingEntity.setDescription(description);
         }
 
         if (startDate != null && endDate != null) {
             validateTestDates(startDate, endDate);
-            existingTest.setStartDate(startDate);
-            existingTest.setEndDate(endDate);
+            existingEntity.setStartDate(startDate);
+            existingEntity.setEndDate(endDate);
         } else if (startDate != null) {
-            validateTestDates(startDate, existingTest.getEndDate());
-            existingTest.setStartDate(startDate);
+            validateTestDates(startDate, existingEntity.getEndDate());
+            existingEntity.setStartDate(startDate);
         } else if (endDate != null) {
-            validateTestDates(existingTest.getStartDate(), endDate);
-            existingTest.setEndDate(endDate);
+            validateTestDates(existingEntity.getStartDate(), endDate);
+            existingEntity.setEndDate(endDate);
         }
 
         if (timeLimit != null) {
-            existingTest.setTimeLimit(timeLimit);
+            existingEntity.setTimeLimit(timeLimit);
         }
 
         if (allowNavigation != null) {
-            existingTest.setAllowNavigation(allowNavigation);
+            existingEntity.setAllowNavigation(allowNavigation);
         }
 
         if (randomizeOrder != null) {
-            existingTest.setRandomizeOrder(randomizeOrder);
+            existingEntity.setRandomizeOrder(randomizeOrder);
         }
 
-        Test updatedTest = testRepository.save(existingTest);
-        log.info("Test updated successfully with id={}", updatedTest.getId());
+        TestEntity updatedEntity = testRepository.save(existingEntity);
+        log.info("Test updated successfully with id={}", updatedEntity.getId());
 
-        return updatedTest;
+        return testMapper.toDomain(updatedEntity);
     }
 
     public void deleteTest(Long id) {
         log.info("Deleting test with id: {}", id);
 
-        Test test = findById(id);
+        TestEntity testEntity = testRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Test not found with id: " + id));
 
-        if (!test.getAttempts().isEmpty()) {
+        if (!testEntity.getAttempts().isEmpty()) {
             throw new IllegalStateException("Cannot delete test with existing attempts");
         }
 
@@ -212,44 +233,58 @@ public class TestService {
     public Test assignGroupToTest(Long testId, Long groupId) {
         log.info("Assigning group {} to test {}", groupId, testId);
 
-        Test test = findById(testId);
-        StudentGroup group = studentGroupRepository.findById(groupId)
+        TestEntity testEntity = testRepository.findById(testId)
+                .orElseThrow(() -> new IllegalArgumentException("Test not found with id: " + testId));
+        StudentGroupEntity groupEntity = studentGroupJpaRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with id: " + groupId));
 
-        if (test.getAssignedGroups().contains(group)) {
+        if (testEntity.getAssignedGroups().contains(groupEntity)) {
             throw new IllegalArgumentException("Group is already assigned to this test");
         }
 
-        test.addGroup(group);
-        Test updatedTest = testRepository.save(test);
-        
+        testEntity.addGroup(groupEntity);
+        TestEntity updatedEntity = testRepository.save(testEntity);
+
         log.info("Group {} assigned to test {} successfully", groupId, testId);
-        return updatedTest;
+        return testMapper.toDomain(updatedEntity);
     }
 
     public Test removeGroupFromTest(Long testId, Long groupId) {
         log.info("Removing group {} from test {}", groupId, testId);
 
-        Test test = findById(testId);
-        StudentGroup group = studentGroupRepository.findById(groupId)
+        TestEntity testEntity = testRepository.findById(testId)
+                .orElseThrow(() -> new IllegalArgumentException("Test not found with id: " + testId));
+        StudentGroupEntity groupEntity = studentGroupJpaRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with id: " + groupId));
 
-        if (!test.getAssignedGroups().contains(group)) {
+        if (!testEntity.getAssignedGroups().contains(groupEntity)) {
             throw new IllegalArgumentException("Group is not assigned to this test");
         }
 
-        test.removeGroup(group);
-        Test updatedTest = testRepository.save(test);
-        
+        testEntity.removeGroup(groupEntity);
+        TestEntity updatedEntity = testRepository.save(testEntity);
+
         log.info("Group {} removed from test {} successfully", groupId, testId);
-        return updatedTest;
+        return testMapper.toDomain(updatedEntity);
     }
 
     @Transactional(readOnly = true)
     public List<StudentGroup> getTestGroups(Long testId) {
         log.debug("Getting groups for test: {}", testId);
-        Test test = findById(testId);
-        return test.getAssignedGroups();
+        TestEntity testEntity = testRepository.findById(testId)
+                .orElseThrow(() -> new IllegalArgumentException("Test not found with id: " + testId));
+
+        return testEntity.getAssignedGroups().stream()
+                .map(this::toStudentGroup)
+                .collect(Collectors.toList());
+    }
+
+    private StudentGroup toStudentGroup(StudentGroupEntity entity) {
+        return StudentGroup.builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .description(entity.getDescription())
+                .build();
     }
 
     @Transactional(readOnly = true)
@@ -309,11 +344,10 @@ public class TestService {
 
     @Transactional(readOnly = true)
     public long countTestsByCreator(Long createdById) {
-        User creator = userRepository.findById(createdById)
-                .map(userMapper::toUser)
+        UserEntity creatorEntity = userRepository.findById(createdById)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found with id: " + createdById));
-        
-        return testRepository.countByCreatedBy(creator);
+
+        return testRepository.countByCreatedBy(creatorEntity);
     }
 
     private void validateTestDates(LocalDateTime startDate, LocalDateTime endDate) {
