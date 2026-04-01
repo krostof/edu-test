@@ -116,9 +116,17 @@ public class AssignmentApiController implements AssignmentsApi {
 
     private List<ChoiceOption> mapChoiceOptions(List<ChoiceOptionRequest> dtos) {
         if (dtos == null) return Collections.emptyList();
-        return dtos.stream()
-                .map(assignmentMapper::toChoiceOption)
-                .collect(Collectors.toList());
+        List<ChoiceOption> options = new java.util.ArrayList<>();
+        for (int i = 0; i < dtos.size(); i++) {
+            ChoiceOptionRequest dto = dtos.get(i);
+            ChoiceOption option = assignmentMapper.toChoiceOption(dto);
+            // Set orderNumber based on index if not provided
+            if (option.getOrderNumber() == null) {
+                option = option.withOrderNumber(i + 1);
+            }
+            options.add(option);
+        }
+        return options;
     }
 
     private List<TestCase> mapTestCases(List<TestCaseRequest> dtos) {
