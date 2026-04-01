@@ -45,7 +45,7 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
     public Assignment save(Assignment assignment) {
         AssignmentEntity entity = mapToEntity(assignment);
         AssignmentEntity savedEntity = jpaRepository.save(entity);
-        return mapToDomain(savedEntity);
+        return initializeAndMap(savedEntity);
     }
 
     @Override
@@ -68,31 +68,36 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
         }
     }
 
+    private Assignment initializeAndMap(AssignmentEntity entity) {
+        initializeLazyCollections(entity);
+        return mapToDomain(entity);
+    }
+
     @Override
     public List<Assignment> findAll() {
         return jpaRepository.findAll().stream()
-                .map(this::mapToDomain)
+                .map(this::initializeAndMap)
                 .collect(Collectors.toList());
     }
 
     @Override
     public Page<Assignment> findAll(Pageable pageable) {
         return jpaRepository.findAll(pageable)
-                .map(this::mapToDomain);
+                .map(this::initializeAndMap);
     }
 
     @Override
     public List<Assignment> findByTest(Test test) {
         TestEntity testEntity = entityManager.getReference(TestEntity.class, test.getId());
         return jpaRepository.findByTestEntity(testEntity).stream()
-                .map(this::mapToDomain)
+                .map(this::initializeAndMap)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<Assignment> findByTestId(Long testId) {
         return jpaRepository.findByTestEntityIdOrderByOrderNumber(testId).stream()
-                .map(this::mapToDomain)
+                .map(this::initializeAndMap)
                 .collect(Collectors.toList());
     }
 
@@ -100,14 +105,14 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
     public List<Assignment> findByTestOrderByOrderNumber(Test test) {
         TestEntity testEntity = entityManager.getReference(TestEntity.class, test.getId());
         return jpaRepository.findByTestEntityOrderByOrderNumber(testEntity).stream()
-                .map(this::mapToDomain)
+                .map(this::initializeAndMap)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<Assignment> findByTestIdOrderByOrderNumber(Long testId) {
         return jpaRepository.findByTestEntityIdOrderByOrderNumber(testId).stream()
-                .map(this::mapToDomain)
+                .map(this::initializeAndMap)
                 .collect(Collectors.toList());
     }
 
@@ -115,7 +120,7 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
     public List<Assignment> findByType(com.edutest.domain.assignment.AssignmentType type) {
         Class<? extends AssignmentEntity> entityClass = mapToEntityClass(type);
         return jpaRepository.findByType(entityClass).stream()
-                .map(this::mapToDomain)
+                .map(this::initializeAndMap)
                 .collect(Collectors.toList());
     }
 
@@ -123,7 +128,7 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
     public Page<Assignment> findByType(com.edutest.domain.assignment.AssignmentType type, Pageable pageable) {
         Class<? extends AssignmentEntity> entityClass = mapToEntityClass(type);
         return jpaRepository.findByType(entityClass, pageable)
-                .map(this::mapToDomain);
+                .map(this::initializeAndMap);
     }
 
     @Override
@@ -132,7 +137,7 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
         Class<? extends AssignmentEntity> entityClass = mapToEntityClass(type);
         return jpaRepository.findByTestEntity(testEntity).stream()
                 .filter(entity -> entity.getClass().equals(entityClass))
-                .map(this::mapToDomain)
+                .map(this::initializeAndMap)
                 .collect(Collectors.toList());
     }
 
@@ -141,20 +146,20 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
         Class<? extends AssignmentEntity> entityClass = mapToEntityClass(type);
         return jpaRepository.findByTestEntityIdOrderByOrderNumber(testId).stream()
                 .filter(entity -> entity.getClass().equals(entityClass))
-                .map(this::mapToDomain)
+                .map(this::initializeAndMap)
                 .collect(Collectors.toList());
     }
 
     @Override
     public Optional<Assignment> findByTestIdAndOrderNumber(Long testId, Integer orderNumber) {
         return jpaRepository.findByTestIdAndOrderNumber(testId, orderNumber)
-                .map(this::mapToDomain);
+                .map(this::initializeAndMap);
     }
 
     @Override
     public Page<Assignment> findByTitleOrDescriptionContaining(String searchTerm, Pageable pageable) {
         return jpaRepository.findByTitleOrDescriptionContaining(searchTerm, pageable)
-                .map(this::mapToDomain);
+                .map(this::initializeAndMap);
     }
 
     @Override
