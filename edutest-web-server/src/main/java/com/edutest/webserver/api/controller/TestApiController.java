@@ -5,8 +5,12 @@ import com.edutest.api.model.*;
 import com.edutest.domain.group.StudentGroup;
 import com.edutest.domain.user.User;
 import com.edutest.dto.AnswerDto;
+import com.edutest.dto.AnswerReviewDto;
+import com.edutest.dto.AttemptListItemDto;
+import com.edutest.dto.GradeAnswerRequestDto;
 import com.edutest.dto.SubmitAnswerRequestDto;
 import com.edutest.dto.TestResultResponseDto;
+import com.edutest.dto.TestStatsSummaryDto;
 import com.edutest.dto.TestSubmissionResultDto;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.entity.user.UserEntityRole;
@@ -14,13 +18,20 @@ import com.edutest.service.TestAttemptService;
 import com.edutest.service.answer.AnswerSubmissionService;
 import com.edutest.service.answer.TestResultsService;
 import com.edutest.service.answer.TestSubmissionService;
+import com.edutest.service.teacher.OpenQuestionGradingService;
+import com.edutest.service.teacher.TeacherAttemptService;
+import com.edutest.service.teacher.TestResultsExportService;
 import com.edutest.service.testservice.TestService;
 import com.edutest.util.AnswerMapper;
+import com.edutest.util.TeacherMapper;
 import com.edutest.util.UserMapper;
 import com.edutest.commons.SecurityContextHelper;
 import com.edutest.util.TestMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,6 +55,10 @@ public class TestApiController implements TestsApi {
     private final TestSubmissionService testSubmissionService;
     private final TestResultsService testResultsService;
     private final AnswerMapper answerMapper;
+    private final TeacherAttemptService teacherAttemptService;
+    private final OpenQuestionGradingService gradingService;
+    private final TestResultsExportService exportService;
+    private final TeacherMapper teacherMapper;
 
     @Override
     public ResponseEntity<Test> createTest(CreateTestRequest request) {
@@ -245,5 +260,82 @@ public class TestApiController implements TestsApi {
                 testId, attemptId, currentUser.getId());
 
         return ResponseEntity.ok(answerMapper.toApiTestResultResponse(resultDto));
+    }
+
+    // ===================== Phase 2: Teacher Panel Endpoints =====================
+
+    @Override
+    public ResponseEntity<AttemptPageResponse> getTestAttempts(
+            Long testId,
+            Long groupId,
+            String status,
+            Integer page,
+            Integer size,
+            String sortBy,
+            String sortDir) {
+        log.info("Getting test attempts: testId={}, groupId={}, status={}, page={}, size={}",
+                testId, groupId, status, page, size);
+
+        Page<AttemptListItemDto> attemptsPage = teacherAttemptService.getAttemptsByTestId(
+                testId,
+                groupId,
+                status,
+                page != null ? page : 0,
+                size != null ? size : 20,
+                sortBy != null ? sortBy : "startedAt",
+                sortDir != null ? sortDir : "desc");
+
+        return ResponseEntity.ok(teacherMapper.toApiAttemptPageResponse(attemptsPage));
+    }
+
+    @Override
+    public ResponseEntity<TestStatsSummary> getTestAttemptsSummary(Long testId) {
+        log.info("Getting test statistics summary: testId={}", testId);
+
+        TestStatsSummaryDto summaryDto = teacherAttemptService.getTestStatsSummary(testId);
+
+        return ResponseEntity.ok(teacherMapper.toApiTestStatsSummary(summaryDto));
+    }
+
+    @Override
+    public ResponseEntity<AnswerReviewResponse> getAnswerForReview(Long testId, Long attemptId, Long assignmentId) {
+        log.info("Getting answer for review: testId={}, attemptId={}, assignmentId={}",
+                testId, attemptId, assignmentId);
+
+        AnswerReviewDto reviewDto = gradingService.getAnswerForReview(testId, attemptId, assignmentId);
+
+        return ResponseEntity.ok(teacherMapper.toApiAnswerReviewResponse(reviewDto));
+    }
+
+    @Override
+    public ResponseEntity<AnswerReviewResponse> gradeAnswer(
+            Long testId,
+            Long attemptId,
+            Long assignmentId,
+            GradeAnswerRequest request) {
+        log.info("Grading answer: testId={}, attemptId={}, assignmentId={}, score={}",
+                testId, attemptId, assignmentId, request.getScore());
+
+        GradeAnswerRequestDto requestDto = teacherMapper.fromApiGradeAnswerRequest(request);
+        AnswerReviewDto reviewDto = gradingService.gradeAnswer(testId, attemptId, assignmentId, requestDto);
+
+        return ResponseEntity.ok(teacherMapper.toApiAnswerReviewResponse(reviewDto));
+    }
+
+    @Override
+    public ResponseEntity<org.springframework.core.io.Resource> exportTestResults(Long testId, String format) {
+        log.info("Exporting test results: testId={}, format={}", testId, format);
+
+        String csvContent = exportService.exportToCsv(testId);
+
+        byte[] bytes = csvContent.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        org.springframework.core.io.ByteArrayResource resource =
+                new org.springframework.core.io.ByteArrayResource(bytes);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"test_" + testId + "_results.csv\"")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .contentLength(bytes.length)
+                .body(resource);
     }
 }

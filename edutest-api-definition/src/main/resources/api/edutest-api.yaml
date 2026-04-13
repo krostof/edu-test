@@ -1387,6 +1387,240 @@ paths:
         '404':
           description: Test attempt not found
 
+  # Teacher Panel Endpoints
+  /tests/{testId}/attempts:
+    get:
+      tags:
+        - Tests
+      summary: Get all test attempts (teacher)
+      description: Get paginated list of all attempts for a test with filtering and sorting (teacher only)
+      operationId: getTestAttempts
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: groupId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: Filter by student group
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - IN_PROGRESS
+              - SUBMITTED
+              - GRADED
+          description: Filter by attempt status
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - startedAt
+              - finishedAt
+              - score
+              - studentName
+            default: startedAt
+        - name: sortDir
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+      responses:
+        '200':
+          description: Attempts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttemptPageResponse'
+        '403':
+          description: Access denied - teacher role required
+        '404':
+          description: Test not found
+
+  /tests/{testId}/attempts/summary:
+    get:
+      tags:
+        - Tests
+      summary: Get test statistics summary
+      description: Get aggregate statistics for all attempts of a test (teacher only)
+      operationId: getTestAttemptsSummary
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestStatsSummary'
+        '403':
+          description: Access denied - teacher role required
+        '404':
+          description: Test not found
+
+  /tests/{testId}/attempts/{attemptId}/answers/{assignmentId}/review:
+    get:
+      tags:
+        - Tests
+      summary: Get answer for review
+      description: Get detailed answer for teacher review and grading
+      operationId: getAnswerForReview
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: attemptId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: assignmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Answer retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerReviewResponse'
+        '403':
+          description: Access denied - teacher role required
+        '404':
+          description: Answer not found
+
+  /tests/{testId}/attempts/{attemptId}/answers/{assignmentId}/grade:
+    put:
+      tags:
+        - Tests
+      summary: Grade an answer
+      description: Submit grade and feedback for an answer (teacher only)
+      operationId: gradeAnswer
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: attemptId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: assignmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GradeAnswerRequest'
+      responses:
+        '200':
+          description: Answer graded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerReviewResponse'
+        '400':
+          description: Invalid score (must be between 0 and max points)
+        '403':
+          description: Access denied - teacher role required
+        '404':
+          description: Answer not found
+
+  /tests/{testId}/results/export:
+    get:
+      tags:
+        - Tests
+      summary: Export test results
+      description: Export test results to CSV format (teacher only)
+      operationId: exportTestResults
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - csv
+            default: csv
+      responses:
+        '200':
+          description: Export generated successfully
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '403':
+          description: Access denied - teacher role required
+        '404':
+          description: Test not found
+
 components:
   securitySchemes:
     BearerAuth:
@@ -2378,6 +2612,216 @@ components:
         # Answer details (what the student submitted)
         answer:
           $ref: '#/components/schemas/AnswerResponse'
+
+    # Teacher Panel Schemas
+    AttemptPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttemptListItem'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        size:
+          type: integer
+        number:
+          type: integer
+        numberOfElements:
+          type: integer
+        first:
+          type: boolean
+        last:
+          type: boolean
+
+    AttemptListItem:
+      type: object
+      properties:
+        attemptId:
+          type: integer
+          format: int64
+        studentId:
+          type: integer
+          format: int64
+        studentName:
+          type: string
+        studentEmail:
+          type: string
+        groupId:
+          type: integer
+          format: int64
+        groupName:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+        score:
+          type: number
+          format: float
+        maxPossibleScore:
+          type: number
+          format: float
+        scorePercentage:
+          type: number
+          format: float
+        status:
+          type: string
+          enum:
+            - IN_PROGRESS
+            - SUBMITTED
+            - GRADED
+        pendingGradingCount:
+          type: integer
+          description: Number of answers awaiting manual grading
+
+    TestStatsSummary:
+      type: object
+      properties:
+        testId:
+          type: integer
+          format: int64
+        testTitle:
+          type: string
+        totalAttempts:
+          type: integer
+        completedAttempts:
+          type: integer
+        inProgressAttempts:
+          type: integer
+        gradedAttempts:
+          type: integer
+        averageScore:
+          type: number
+          format: float
+        medianScore:
+          type: number
+          format: float
+        minScore:
+          type: number
+          format: float
+        maxScore:
+          type: number
+          format: float
+        averageScorePercentage:
+          type: number
+          format: float
+        scoreDistribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScoreDistributionItem'
+          description: Distribution of scores in ranges (0-10%, 10-20%, etc.)
+
+    ScoreDistributionItem:
+      type: object
+      properties:
+        rangeLabel:
+          type: string
+          description: e.g., "0-10%", "10-20%"
+        count:
+          type: integer
+        percentage:
+          type: number
+          format: float
+
+    AnswerReviewResponse:
+      type: object
+      properties:
+        answerId:
+          type: integer
+          format: int64
+        attemptId:
+          type: integer
+          format: int64
+        assignmentId:
+          type: integer
+          format: int64
+        assignmentTitle:
+          type: string
+        assignmentType:
+          type: string
+          enum:
+            - SINGLE_CHOICE
+            - MULTIPLE_CHOICE
+            - OPEN_QUESTION
+            - CODING
+        assignmentDescription:
+          type: string
+        maxPoints:
+          type: number
+          format: float
+        studentId:
+          type: integer
+          format: int64
+        studentName:
+          type: string
+        answeredAt:
+          type: string
+          format: date-time
+        # Answer content (depends on type)
+        answerText:
+          type: string
+          description: For OPEN_QUESTION
+        selectedOptionId:
+          type: integer
+          format: int64
+          description: For SINGLE_CHOICE
+        selectedOptionIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          description: For MULTIPLE_CHOICE
+        sourceCode:
+          type: string
+          description: For CODING
+        programmingLanguage:
+          type: string
+          description: For CODING
+        # For choice questions - show correct answers
+        correctOptionIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChoiceOptionResponse'
+          description: All options for choice questions
+        # For open questions - sample answer and rubric
+        sampleAnswer:
+          type: string
+        gradingRubric:
+          type: string
+        # Grading info
+        score:
+          type: number
+          format: float
+        isGraded:
+          type: boolean
+        teacherFeedback:
+          type: string
+
+    GradeAnswerRequest:
+      type: object
+      required:
+        - score
+      properties:
+        score:
+          type: number
+          format: float
+          minimum: 0
+          description: Score must be between 0 and assignment max points
+        feedback:
+          type: string
+          maxLength: 2000
+          description: Optional feedback for the student
 
     # Error Schemas
     ErrorResponse:
