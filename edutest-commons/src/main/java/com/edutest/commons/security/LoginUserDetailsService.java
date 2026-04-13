@@ -45,7 +45,7 @@ public class LoginUserDetailsService implements UserDetailsService {
         private final boolean isActive;
 
         public UserPrincipal(String id, String username, String email, String password,
-                            Collection<? extends GrantedAuthority> authorities, boolean isActive) {
+                             Collection<? extends GrantedAuthority> authorities, boolean isActive) {
             this.id = id;
             this.username = username;
             this.email = email;
@@ -56,16 +56,16 @@ public class LoginUserDetailsService implements UserDetailsService {
 
         public static UserPrincipal create(UserSecurity user) {
             List<GrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ROLE_" + user.getRole().getValue())
+                    new SimpleGrantedAuthority("ROLE_" + user.getRole().getValue())
             );
 
             return new UserPrincipal(
-                user.getId().toString(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getPassword(),
-                authorities,
-                user.getIsActive()
+                    user.getId().toString(),
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getPassword(),
+                    authorities,
+                    user.getIsActive()
             );
         }
 

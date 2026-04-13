@@ -4,10 +4,18 @@ import com.edutest.api.TestsApi;
 import com.edutest.api.model.*;
 import com.edutest.domain.group.StudentGroup;
 import com.edutest.domain.user.User;
+import com.edutest.dto.AnswerDto;
+import com.edutest.dto.SubmitAnswerRequestDto;
+import com.edutest.dto.TestResultResponseDto;
+import com.edutest.dto.TestSubmissionResultDto;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.entity.user.UserEntityRole;
 import com.edutest.service.TestAttemptService;
+import com.edutest.service.answer.AnswerSubmissionService;
+import com.edutest.service.answer.TestResultsService;
+import com.edutest.service.answer.TestSubmissionService;
 import com.edutest.service.testservice.TestService;
+import com.edutest.util.AnswerMapper;
 import com.edutest.util.UserMapper;
 import com.edutest.commons.SecurityContextHelper;
 import com.edutest.util.TestMapper;
@@ -18,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -31,6 +40,10 @@ public class TestApiController implements TestsApi {
     private final TestMapper testMapper;
     private final SecurityContextHelper securityContextHelper;
     private final UserMapper userMapper;
+    private final AnswerSubmissionService answerSubmissionService;
+    private final TestSubmissionService testSubmissionService;
+    private final TestResultsService testResultsService;
+    private final AnswerMapper answerMapper;
 
     @Override
     public ResponseEntity<Test> createTest(CreateTestRequest request) {
@@ -165,5 +178,72 @@ public class TestApiController implements TestsApi {
         resp.setDescription(group.getDescription());
         resp.setStudentCount(group.getStudentCount());
         return resp;
+    }
+
+    @Override
+    public ResponseEntity<AnswerResponse> submitAnswer(Long testId, Long attemptId, Long assignmentId, SubmitAnswerRequest request) {
+        UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
+        log.info("Submitting answer: testId={}, attemptId={}, assignmentId={}, studentId={}",
+                testId, attemptId, assignmentId, currentUser.getId());
+
+        SubmitAnswerRequestDto requestDto = answerMapper.fromApiSubmitAnswerRequest(request);
+        AnswerDto answerDto = answerSubmissionService.submitAnswer(
+                testId, attemptId, assignmentId, currentUser.getId(), requestDto);
+
+        return ResponseEntity.ok(answerMapper.toApiAnswerResponse(answerDto));
+    }
+
+    @Override
+    public ResponseEntity<AnswerResponse> getAnswer(Long testId, Long attemptId, Long assignmentId) {
+        UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
+        log.info("Getting answer: testId={}, attemptId={}, assignmentId={}, studentId={}",
+                testId, attemptId, assignmentId, currentUser.getId());
+
+        Optional<AnswerDto> answerDto = answerSubmissionService.getAnswer(
+                testId, attemptId, assignmentId, currentUser.getId());
+
+        return answerDto
+                .map(dto -> ResponseEntity.ok(answerMapper.toApiAnswerResponse(dto)))
+                .orElseThrow(() -> new IllegalArgumentException("Answer not found"));
+    }
+
+    @Override
+    public ResponseEntity<List<AnswerResponse>> getAllAnswers(Long testId, Long attemptId) {
+        UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
+        log.info("Getting all answers: testId={}, attemptId={}, studentId={}",
+                testId, attemptId, currentUser.getId());
+
+        List<AnswerDto> answers = answerSubmissionService.getAllAnswers(
+                testId, attemptId, currentUser.getId());
+
+        List<AnswerResponse> result = answers.stream()
+                .map(answerMapper::toApiAnswerResponse)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(result);
+    }
+
+    @Override
+    public ResponseEntity<TestSubmissionResult> submitTestAttempt(Long testId, Long attemptId) {
+        UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
+        log.info("Submitting test attempt: testId={}, attemptId={}, studentId={}",
+                testId, attemptId, currentUser.getId());
+
+        TestSubmissionResultDto resultDto = testSubmissionService.submitTestAttempt(
+                testId, attemptId, currentUser.getId());
+
+        return ResponseEntity.ok(answerMapper.toApiTestSubmissionResult(resultDto));
+    }
+
+    @Override
+    public ResponseEntity<TestResultResponse> getTestResults(Long testId, Long attemptId) {
+        UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
+        log.info("Getting test results: testId={}, attemptId={}, studentId={}",
+                testId, attemptId, currentUser.getId());
+
+        TestResultResponseDto resultDto = testResultsService.getTestResults(
+                testId, attemptId, currentUser.getId());
+
+        return ResponseEntity.ok(answerMapper.toApiTestResultResponse(resultDto));
     }
 }

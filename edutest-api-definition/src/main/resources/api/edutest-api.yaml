@@ -1191,6 +1191,202 @@ paths:
         '403':
           description: Access denied
 
+  # Test Attempt Answer Endpoints
+  /tests/{testId}/attempts/{attemptId}/answers:
+    get:
+      tags:
+        - Tests
+      summary: Get all answers for test attempt
+      description: Get all submitted answers for the current test attempt (student only)
+      operationId: getAllAnswers
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: attemptId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Answers retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AnswerResponse'
+        '403':
+          description: Access denied - not your attempt
+        '404':
+          description: Test attempt not found
+
+  /tests/{testId}/attempts/{attemptId}/answers/{assignmentId}:
+    get:
+      tags:
+        - Tests
+      summary: Get answer for specific assignment
+      description: Get the submitted answer for a specific assignment in the test attempt
+      operationId: getAnswer
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: attemptId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: assignmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Answer retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerResponse'
+        '403':
+          description: Access denied - not your attempt
+        '404':
+          description: Answer not found
+
+    post:
+      tags:
+        - Tests
+      summary: Submit answer for assignment
+      description: Submit or update answer for a specific assignment during test attempt
+      operationId: submitAnswer
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: attemptId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: assignmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitAnswerRequest'
+      responses:
+        '200':
+          description: Answer submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerResponse'
+        '400':
+          description: Invalid answer data
+        '403':
+          description: Access denied - not your attempt
+        '404':
+          description: Test attempt or assignment not found
+        '409':
+          description: Test attempt already completed or time expired
+
+  /tests/{testId}/attempts/{attemptId}/submit:
+    post:
+      tags:
+        - Tests
+      summary: Submit test attempt
+      description: Finish and submit the test attempt for grading
+      operationId: submitTestAttempt
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: attemptId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Test submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestSubmissionResult'
+        '403':
+          description: Access denied - not your attempt
+        '404':
+          description: Test attempt not found
+        '409':
+          description: Test attempt already completed
+
+  /tests/{testId}/attempts/{attemptId}/results:
+    get:
+      tags:
+        - Tests
+      summary: Get test results
+      description: Get detailed results for a completed test attempt
+      operationId: getTestResults
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: attemptId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Results retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestResultResponse'
+        '403':
+          description: Access denied - test not completed or not your attempt
+        '404':
+          description: Test attempt not found
+
 components:
   securitySchemes:
     BearerAuth:
@@ -1983,6 +2179,205 @@ components:
           format: float
         isCompleted:
           type: boolean
+
+    # Answer Submission Schemas
+    SubmitAnswerRequest:
+      type: object
+      description: Polymorphic request for submitting answers. Include fields based on assignment type.
+      properties:
+        # Single Choice - include selectedOptionId
+        selectedOptionId:
+          type: integer
+          format: int64
+          description: ID of the selected option (for SINGLE_CHOICE assignments)
+        # Multiple Choice - include selectedOptionIds
+        selectedOptionIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          description: IDs of selected options (for MULTIPLE_CHOICE assignments)
+        # Open Question - include answerText
+        answerText:
+          type: string
+          maxLength: 10000
+          description: Text answer (for OPEN_QUESTION assignments)
+        # Coding - include sourceCode and programmingLanguage
+        sourceCode:
+          type: string
+          maxLength: 10000
+          description: Source code (for CODING assignments)
+        programmingLanguage:
+          type: string
+          maxLength: 50
+          description: Programming language (for CODING assignments)
+
+    AnswerResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        assignmentId:
+          type: integer
+          format: int64
+        assignmentType:
+          type: string
+          enum:
+            - SINGLE_CHOICE
+            - MULTIPLE_CHOICE
+            - OPEN_QUESTION
+            - CODING
+        answeredAt:
+          type: string
+          format: date-time
+        # Single Choice fields
+        selectedOptionId:
+          type: integer
+          format: int64
+        # Multiple Choice fields
+        selectedOptionIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+        # Open Question fields
+        answerText:
+          type: string
+        wordCount:
+          type: integer
+        characterCount:
+          type: integer
+        # Coding fields
+        sourceCode:
+          type: string
+        programmingLanguage:
+          type: string
+        compilationStatus:
+          type: string
+          enum:
+            - NOT_COMPILED
+            - SUCCESS
+            - ERROR
+            - TIMEOUT
+        compilationError:
+          type: string
+        executionStatus:
+          type: string
+          enum:
+            - NOT_EXECUTED
+            - SUCCESS
+            - RUNTIME_ERROR
+            - TIME_LIMIT_EXCEEDED
+            - MEMORY_LIMIT_EXCEEDED
+            - SYSTEM_ERROR
+        # Grading fields (may be null if not graded)
+        score:
+          type: number
+          format: float
+        isGraded:
+          type: boolean
+        teacherFeedback:
+          type: string
+
+    TestSubmissionResult:
+      type: object
+      properties:
+        attemptId:
+          type: integer
+          format: int64
+        testId:
+          type: integer
+          format: int64
+        submittedAt:
+          type: string
+          format: date-time
+        totalScore:
+          type: number
+          format: float
+        maxPossibleScore:
+          type: number
+          format: float
+        scorePercentage:
+          type: number
+          format: float
+        gradedCount:
+          type: integer
+          description: Number of automatically graded assignments
+        pendingGradingCount:
+          type: integer
+          description: Number of assignments awaiting manual grading
+
+    TestResultResponse:
+      type: object
+      properties:
+        attemptId:
+          type: integer
+          format: int64
+        testId:
+          type: integer
+          format: int64
+        testTitle:
+          type: string
+        studentId:
+          type: integer
+          format: int64
+        startedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+        totalScore:
+          type: number
+          format: float
+        maxPossibleScore:
+          type: number
+          format: float
+        scorePercentage:
+          type: number
+          format: float
+        isFullyGraded:
+          type: boolean
+          description: Whether all assignments have been graded
+        assignmentResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssignmentResultResponse'
+
+    AssignmentResultResponse:
+      type: object
+      properties:
+        assignmentId:
+          type: integer
+          format: int64
+        assignmentTitle:
+          type: string
+        assignmentType:
+          type: string
+          enum:
+            - SINGLE_CHOICE
+            - MULTIPLE_CHOICE
+            - OPEN_QUESTION
+            - CODING
+        orderNumber:
+          type: integer
+        maxPoints:
+          type: number
+          format: float
+        earnedScore:
+          type: number
+          format: float
+        isCorrect:
+          type: boolean
+          description: For choice questions, whether the answer was correct
+        isGraded:
+          type: boolean
+        teacherFeedback:
+          type: string
+        # Answer details (what the student submitted)
+        answer:
+          $ref: '#/components/schemas/AnswerResponse'
 
     # Error Schemas
     ErrorResponse:

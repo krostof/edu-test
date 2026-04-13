@@ -22,7 +22,7 @@ public class JwtTokenProvider {
     private final SecretKey key;
 
     public JwtTokenProvider(@Value("${app.jwtSecret:myVeryLongSecretKeyForJWTTokenGenerationAndValidationThatIsDefinitelyLongEnoughForSecurityRequirements256Bits}") String jwtSecret,
-                           @Value("${app.jwtExpirationMs:86400000}") int jwtExpirationMs) {
+                            @Value("${app.jwtExpirationMs:86400000}") int jwtExpirationMs) {
         this.jwtSecret = jwtSecret;
         this.jwtExpirationMs = jwtExpirationMs;
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
