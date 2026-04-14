@@ -5,6 +5,7 @@ import com.edutest.api.model.TestAttempt;
 import com.edutest.api.model.TestDetails;
 import com.edutest.api.model.UserProfile;
 import com.edutest.domain.user.User;
+import com.edutest.persistance.entity.test.TestAttemptEntity;
 import com.edutest.persistance.entity.test.TestEntity;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.repository.UserRepository;
@@ -141,6 +142,26 @@ public class TestMapper {
         }
         api.setScore(domain.getScore());
         api.setIsCompleted(domain.getIsCompleted());
+        return api;
+    }
+
+    public TestAttempt toApiTestAttempt(TestAttemptEntity entity) {
+        TestAttempt api = new TestAttempt();
+        api.setId(entity.getId());
+        if (entity.getTestEntity() != null) {
+            api.setTestId(entity.getTestEntity().getId());
+        }
+        if (entity.getStudent() != null) {
+            api.setStudentId(entity.getStudent().getId());
+        }
+        if (entity.getStartedAt() != null) {
+            api.setStartedAt(entity.getStartedAt().atOffset(ZoneOffset.UTC));
+        }
+        if (entity.getFinishedAt() != null) {
+            api.setFinishedAt(entity.getFinishedAt().atOffset(ZoneOffset.UTC));
+        }
+        api.setScore(entity.getScore());
+        api.setIsCompleted(entity.getIsCompleted());
         return api;
     }
 

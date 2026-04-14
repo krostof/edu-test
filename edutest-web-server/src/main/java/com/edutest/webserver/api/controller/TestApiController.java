@@ -12,9 +12,11 @@ import com.edutest.dto.SubmitAnswerRequestDto;
 import com.edutest.dto.TestResultResponseDto;
 import com.edutest.dto.TestStatsSummaryDto;
 import com.edutest.dto.TestSubmissionResultDto;
+import com.edutest.persistance.entity.test.TestAttemptEntity;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.entity.user.UserEntityRole;
 import com.edutest.service.TestAttemptService;
+import com.edutest.service.attempt.TestAttemptManagementService;
 import com.edutest.service.answer.AnswerSubmissionService;
 import com.edutest.service.answer.TestResultsService;
 import com.edutest.service.answer.TestSubmissionService;
@@ -48,6 +50,7 @@ public class TestApiController implements TestsApi {
 
     private final TestService testService;
     private final TestAttemptService testAttemptService;
+    private final TestAttemptManagementService testAttemptManagementService;
     private final TestMapper testMapper;
     private final SecurityContextHelper securityContextHelper;
     private final UserMapper userMapper;
@@ -119,17 +122,10 @@ public class TestApiController implements TestsApi {
         UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
         log.info("Starting test attempt: testId={}, studentId={}", testId, currentUser.getId());
 
-        com.edutest.domain.test.Test test = testService.findById(testId);
-        User student = userMapper.toUser(currentUser);
+        TestAttemptEntity attemptEntity = testAttemptManagementService.startOrResumeAttempt(
+                testId, currentUser.getId());
 
-        com.edutest.domain.test.TestAttempt.AttemptResult result =
-                testAttemptService.validateAndPrepareAttempt(test, student);
-
-        if (!result.isSuccess()) {
-            throw new IllegalStateException(result.getMessage());
-        }
-
-        return ResponseEntity.status(201).body(testMapper.toApiTestAttempt(result.getAttempt()));
+        return ResponseEntity.status(201).body(testMapper.toApiTestAttempt(attemptEntity));
     }
 
     @Override

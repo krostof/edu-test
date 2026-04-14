@@ -40,6 +40,16 @@ public class TestAttemptEntity extends BaseEntity {
     @Builder.Default
     private Boolean isCompleted = false;
 
+    @Column(name = "assignment_order", length = 2000)
+    private String assignmentOrder;
+
+    @Column(name = "options_order", length = 4000)
+    private String optionsOrder;
+
+    @Column(name = "current_question_index")
+    @Builder.Default
+    private Integer currentQuestionIndex = 0;
+
     @PrePersist
     private void validateStudent() {
         if (student != null && !student.isStudent()) {

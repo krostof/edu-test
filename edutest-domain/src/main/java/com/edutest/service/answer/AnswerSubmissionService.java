@@ -14,7 +14,9 @@ import com.edutest.persistance.entity.code.CodeSubmissionEntity;
 import com.edutest.persistance.entity.test.TestAttemptEntity;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.repository.*;
+import com.edutest.service.attempt.AttemptRandomizationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AnswerSubmissionService {
 
     private final TestAttemptJpaRepository testAttemptRepository;
@@ -35,11 +38,15 @@ public class AnswerSubmissionService {
     private final CodeSubmissionJpaRepository codeSubmissionRepository;
     private final ChoiceOptionJpaRepository choiceOptionRepository;
     private final UserRepository userRepository;
+    private final AttemptRandomizationService randomizationService;
 
     @Transactional
     public AnswerDto submitAnswer(Long testId, Long attemptId, Long assignmentId, Long studentId, SubmitAnswerRequestDto request) {
         TestAttemptEntity attempt = validateAndGetAttempt(testId, attemptId, studentId);
         AssignmentEntity assignment = validateAndGetAssignment(testId, assignmentId);
+
+        // Validate navigation restrictions
+        validateNavigationRestrictions(attempt, assignmentId);
 
         AssignmentType type = assignment.getType();
 
@@ -49,6 +56,44 @@ public class AnswerSubmissionService {
         } else {
             AssignmentAnswerEntity answer = submitNonCodeAnswer(attempt, assignment, studentId, request);
             return mapAnswerToDto(answer);
+        }
+    }
+
+    private void validateNavigationRestrictions(TestAttemptEntity attempt, Long assignmentId) {
+        // If navigation is allowed, no restrictions
+        if (Boolean.TRUE.equals(attempt.getTestEntity().getAllowNavigation())) {
+            return;
+        }
+
+        // Get the assignment's position in the randomized order
+        List<Long> assignmentOrder = randomizationService.getAssignmentOrder(attempt);
+        if (assignmentOrder.isEmpty()) {
+            // Fallback to original order if no randomization data
+            return;
+        }
+
+        int questionIndex = assignmentOrder.indexOf(assignmentId);
+        if (questionIndex == -1) {
+            log.warn("Assignment {} not found in order for attempt {}", assignmentId, attempt.getId());
+            return;
+        }
+
+        Integer currentIndex = attempt.getCurrentQuestionIndex();
+        if (currentIndex == null) {
+            currentIndex = 0;
+        }
+
+        // Cannot go back to previous questions
+        if (questionIndex < currentIndex) {
+            throw new IllegalStateException("Navigation to previous questions is not allowed. Current question: " +
+                    (currentIndex + 1) + ", attempted question: " + (questionIndex + 1));
+        }
+
+        // Update current question index if moving forward
+        if (questionIndex > currentIndex) {
+            attempt.setCurrentQuestionIndex(questionIndex);
+            testAttemptRepository.save(attempt);
+            log.debug("Updated current question index to {} for attempt {}", questionIndex, attempt.getId());
         }
     }
 
