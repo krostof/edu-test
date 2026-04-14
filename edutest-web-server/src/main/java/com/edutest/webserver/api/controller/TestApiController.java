@@ -35,6 +35,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -64,6 +65,7 @@ public class TestApiController implements TestsApi {
     private final TeacherMapper teacherMapper;
 
     @Override
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public ResponseEntity<Test> createTest(CreateTestRequest request) {
         log.info("Creating test: {}", request.getTitle());
         UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
@@ -129,6 +131,7 @@ public class TestApiController implements TestsApi {
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public ResponseEntity<Test> updateTest(Long testId, UpdateTestRequest request) {
         log.info("Updating test id={}", testId);
 
@@ -152,6 +155,7 @@ public class TestApiController implements TestsApi {
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public ResponseEntity<Void> deleteTest(Long testId) {
         log.info("Deleting test id={}", testId);
         testService.deleteTest(testId);
@@ -169,6 +173,7 @@ public class TestApiController implements TestsApi {
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public ResponseEntity<Void> assignGroupToTest(Long testId, AssignGroupRequest request) {
         log.info("Assigning group {} to test {}", request.getGroupId(), testId);
         testService.assignGroupToTest(testId, request.getGroupId());
@@ -176,6 +181,7 @@ public class TestApiController implements TestsApi {
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public ResponseEntity<Void> removeGroupFromTest(Long testId, Long groupId) {
         log.info("Removing group {} from test {}", groupId, testId);
         testService.removeGroupFromTest(testId, groupId);
@@ -261,6 +267,7 @@ public class TestApiController implements TestsApi {
     // ===================== Phase 2: Teacher Panel Endpoints =====================
 
     @Override
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public ResponseEntity<AttemptPageResponse> getTestAttempts(
             Long testId,
             Long groupId,
@@ -285,6 +292,7 @@ public class TestApiController implements TestsApi {
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public ResponseEntity<TestStatsSummary> getTestAttemptsSummary(Long testId) {
         log.info("Getting test statistics summary: testId={}", testId);
 
@@ -294,6 +302,7 @@ public class TestApiController implements TestsApi {
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public ResponseEntity<AnswerReviewResponse> getAnswerForReview(Long testId, Long attemptId, Long assignmentId) {
         log.info("Getting answer for review: testId={}, attemptId={}, assignmentId={}",
                 testId, attemptId, assignmentId);
@@ -304,6 +313,7 @@ public class TestApiController implements TestsApi {
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public ResponseEntity<AnswerReviewResponse> gradeAnswer(
             Long testId,
             Long attemptId,
@@ -319,6 +329,7 @@ public class TestApiController implements TestsApi {
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public ResponseEntity<org.springframework.core.io.Resource> exportTestResults(Long testId, String format) {
         log.info("Exporting test results: testId={}, format={}", testId, format);
 
