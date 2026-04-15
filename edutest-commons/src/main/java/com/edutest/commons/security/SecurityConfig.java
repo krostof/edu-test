@@ -94,6 +94,8 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/api/auth/register",
                                 "/api/auth/login",
+                                "/api/auth/refresh",
+                                "/api/auth/logout",
                                 "/api/auth/test/**",
                                 "/error"
                         ).permitAll()

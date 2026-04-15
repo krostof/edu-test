@@ -66,7 +66,7 @@ public class AuthController implements AuthenticationApi {
     }
 
     @Override
-    public ResponseEntity<LoginResponse> login(@Valid LoginRequest loginRequest) {
+    public ResponseEntity<LoginResponse> login(LoginRequest loginRequest) {
         log.info("Login attempt for username: {}", loginRequest.getUsername());
 
         Optional<UserEntity> byUsername = userRepository.findByUsername(loginRequest.getUsername());
@@ -107,7 +107,7 @@ public class AuthController implements AuthenticationApi {
     }
 
     @Override
-    public ResponseEntity<LoginResponse> refreshToken(@Valid RefreshTokenRequest refreshTokenRequest) {
+    public ResponseEntity<LoginResponse> refreshToken(RefreshTokenRequest refreshTokenRequest) {
         log.info("Refresh token request received");
 
         String requestRefreshToken = refreshTokenRequest.getRefreshToken();
