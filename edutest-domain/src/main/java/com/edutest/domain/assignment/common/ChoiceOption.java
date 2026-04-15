@@ -16,6 +16,7 @@ public class ChoiceOption {
     private boolean correct;
     private Integer orderNumber;
     private String explanation;
+    private Long version;
 
     public static ChoiceOption create(String optionText, boolean correct, Integer orderNumber) {
         return ChoiceOption.builder()

@@ -309,6 +309,7 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
         entity.setTestEntity(testEntity);
         entity.setCreatedAt(domain.getCreatedAt());
         entity.setUpdatedAt(domain.getUpdatedAt());
+        entity.setVersion(domain.getVersion());
     }
 
     private ChoiceOptionEntity mapChoiceOptionToEntity(ChoiceOption domain, AssignmentEntity assignmentEntity) {
@@ -318,6 +319,7 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
         entity.setIsCorrect(domain.isCorrect());
         entity.setOrderNumber(domain.getOrderNumber());
         entity.setExplanation(domain.getExplanation());
+        entity.setVersion(domain.getVersion());
 
         if (domain.getId() != null) {
             entity.setId(domain.getId());
@@ -333,7 +335,8 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
         entity.setExpectedOutput(domain.getExpectedOutput());
         entity.setIsPublic(domain.getIsPublic());
         entity.setDescription(domain.getDescription());
-        entity.setWeight(domain.getWeight());
+        entity.setWeight(domain.getWeight() != null ? domain.getWeight().intValue() : null);
+        entity.setVersion(domain.getVersion());
 
         if (domain.getId() != null) {
             entity.setId(domain.getId());
@@ -373,8 +376,9 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
                 .points(entity.getPoints() != null ? entity.getPoints().floatValue() : null)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
-                .options(options)
+                .version(entity.getVersion())
                 .randomizeOptions(entity.getRandomizeOptions() != null ? entity.getRandomizeOptions() : false)
+                .options(options)
                 .build();
     }
 
@@ -394,8 +398,8 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
                 .points(entity.getPoints() != null ? entity.getPoints().floatValue() : null)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
+                .version(entity.getVersion())
                 .options(options)
-                .randomizeOptions(entity.getRandomizeOptions() != null ? entity.getRandomizeOptions() : false)
                 .partialScoring(entity.getPartialScoring() != null ? entity.getPartialScoring() : false)
                 .penaltyForWrong(entity.getPenaltyForWrong() != null ? entity.getPenaltyForWrong() : false)
                 .build();
@@ -411,6 +415,7 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
                 .points(entity.getPoints() != null ? entity.getPoints().floatValue() : null)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
+                .version(entity.getVersion())
                 .maxLength(entity.getMaxLength())
                 .minLength(entity.getMinLength())
                 .sampleAnswer(entity.getSampleAnswer())
@@ -436,6 +441,7 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
                 .points(entity.getPoints() != null ? entity.getPoints().floatValue() : null)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
+                .version(entity.getVersion())
                 .timeLimitMs(entity.getTimeLimitMs())
                 .memoryLimitMb(entity.getMemoryLimitMb())
                 .allowedLanguages(entity.getAllowedLanguagesStr())
@@ -450,9 +456,10 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
                 .id(entity.getId())
                 .assignmentId(entity.getAssignmentEntity() != null ? entity.getAssignmentEntity().getId() : null)
                 .optionText(entity.getOptionText())
-                .correct(entity.isCorrectAnswer())
+                .correct(entity.getIsCorrect() != null ? entity.getIsCorrect() : false)
                 .orderNumber(entity.getOrderNumber())
                 .explanation(entity.getExplanation())
+                .version(entity.getVersion())
                 .build();
     }
 
@@ -461,9 +468,10 @@ public class AssignmentRepositoryImpl implements AssignmentRepository {
                 .id(entity.getId())
                 .inputData(entity.getInputData())
                 .expectedOutput(entity.getExpectedOutput())
-                .isPublic(entity.getIsPublic())
+                .isPublic(entity.getIsPublic() != null ? entity.getIsPublic() : false)
                 .description(entity.getDescription())
-                .weight(entity.getWeight())
+                .weight(entity.getWeight() != null ? entity.getWeight().floatValue() : null)
+                .version(entity.getVersion())
                 .build();
     }
 

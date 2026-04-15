@@ -82,7 +82,7 @@ public class AssignmentMapper {
                 .expectedOutput(dto.getExpectedOutput())
                 .isPublic(dto.getIsPublic() != null ? dto.getIsPublic() : false)
                 .description(dto.getDescription())
-                .weight(dto.getWeight() != null ? dto.getWeight() : 1)
+                .weight(dto.getWeight() != null ? dto.getWeight().floatValue() : null)
                 .build();
     }
 
@@ -113,7 +113,7 @@ public class AssignmentMapper {
         resp.setExpectedOutput(tc.getExpectedOutput());
         resp.setIsPublic(tc.getIsPublic());
         resp.setDescription(tc.getDescription());
-        resp.setWeight(tc.getWeight());
+        resp.setWeight(tc.getWeight() != null ? tc.getWeight().intValue() : null);
         return resp;
     }
 
@@ -197,7 +197,7 @@ public class AssignmentMapper {
                 .expectedOutput(dto.getExpectedOutput())
                 .isPublic(dto.getIsPublic() != null ? dto.getIsPublic() : false)
                 .description(dto.getDescription())
-                .weight(dto.getWeight() != null ? dto.getWeight() : 1)
+                .weight(dto.getWeight() != null ? dto.getWeight().floatValue() : 1f)
                 .build();
     }
 
@@ -228,7 +228,7 @@ public class AssignmentMapper {
         dto.setExpectedOutput(tc.getExpectedOutput());
         dto.setIsPublic(tc.getIsPublic());
         dto.setDescription(tc.getDescription());
-        dto.setWeight(tc.getWeight());
+        dto.setWeight(tc.getWeight() != null ? tc.getWeight().intValue() : null);
         return dto;
     }
 }

@@ -21,6 +21,7 @@ public abstract class Assignment {
     private Boolean isAttachmentAllowed;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long version;
 
     public abstract AssignmentType getType();
     public abstract ValidationResult validateAnswer(String answer);

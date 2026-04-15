@@ -18,9 +18,8 @@ public class TestCase {
     private Boolean isPublic = false;
 
     private String description;
-
-    @Builder.Default
-    private Integer weight = 1;
+    private Float weight;
+    private Long version;
 
     public boolean matches(String actualOutput) {
         if (expectedOutput == null && actualOutput == null) {
