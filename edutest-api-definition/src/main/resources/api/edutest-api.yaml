@@ -2254,6 +2254,46 @@ components:
           type: number
           format: float
           minimum: 0.1
+        # Single Choice / Multiple Choice fields
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChoiceOptionRequest'
+        randomizeOptions:
+          type: boolean
+        # Multiple Choice only
+        partialScoring:
+          type: boolean
+        penaltyForWrong:
+          type: boolean
+        # Open Question fields
+        minLength:
+          type: integer
+          minimum: 0
+        maxLength:
+          type: integer
+          minimum: 1
+        sampleAnswer:
+          type: string
+        # Coding fields
+        timeLimitMs:
+          type: integer
+        memoryLimitMb:
+          type: integer
+        allowedLanguages:
+          type: array
+          items:
+            type: string
+        starterCode:
+          type: string
+        solutionTemplate:
+          type: string
+        testCases:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestCaseRequest'
+        isAttachmentAllowed:
+          type: boolean
 
     MoveAssignmentRequest:
       type: object
