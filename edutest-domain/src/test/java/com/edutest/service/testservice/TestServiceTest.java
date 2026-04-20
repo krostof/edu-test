@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -95,12 +96,12 @@ class TestServiceTest {
 
         teacherUser = User.builder()
                 .username("teacher1")
-                .role(UserRole.TEACHER)
+                .roles(Set.of(UserRole.TEACHER))
                 .build();
 
         studentUser = User.builder()
                 .username("student1")
-                .role(UserRole.STUDENT)
+                .roles(Set.of(UserRole.STUDENT))
                 .build();
 
         testEntity = new TestEntity();
@@ -185,7 +186,7 @@ class TestServiceTest {
                     LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(7),
                     60, true, false, 2L))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Only teachers and admins can create tests");
+                    .hasMessageContaining("Only teachers can create tests");
         }
 
         @org.junit.jupiter.api.Test

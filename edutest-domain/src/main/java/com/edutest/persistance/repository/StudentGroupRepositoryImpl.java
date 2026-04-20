@@ -12,8 +12,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
@@ -144,12 +147,18 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
     }
 
     private User mapUserEntityToDomain(UserEntity entity) {
+        Set<UserRole> roles = entity.getRoles() != null
+                ? entity.getRoles().stream()
+                    .map(this::mapToDomainRole)
+                    .collect(Collectors.toSet())
+                : new HashSet<>();
+
         User user = User.builder()
                 .username(entity.getUsername())
                 .email(entity.getEmail())
                 .firstName(entity.getFirstName())
                 .lastName(entity.getLastName())
-                .role(mapToDomainRole(entity.getRole()))
+                .roles(roles)
                 .isActive(entity.getIsActive())
                 .studentNumber(entity.getStudentNumber())
                 .build();
@@ -162,6 +171,7 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
     }
 
     private UserRole mapToDomainRole(UserEntityRole entityRole) {
+        if (entityRole == null) return null;
         return switch (entityRole) {
             case STUDENT -> UserRole.STUDENT;
             case TEACHER -> UserRole.TEACHER;

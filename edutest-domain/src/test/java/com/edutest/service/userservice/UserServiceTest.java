@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -98,7 +99,7 @@ class UserServiceTest {
                 .email("teacher@test.com")
                 .firstName("John")
                 .lastName("Teacher")
-                .role(UserRole.TEACHER)
+                .roles(Set.of(UserRole.TEACHER))
                 .isActive(true)
                 .build();
 
@@ -107,7 +108,7 @@ class UserServiceTest {
                 .email("student@test.com")
                 .firstName("Jane")
                 .lastName("Student")
-                .role(UserRole.STUDENT)
+                .roles(Set.of(UserRole.STUDENT))
                 .isActive(true)
                 .build();
 
@@ -116,7 +117,7 @@ class UserServiceTest {
                 .email("admin@test.com")
                 .firstName("Admin")
                 .lastName("User")
-                .role(UserRole.ADMIN)
+                .roles(Set.of(UserRole.ADMIN))
                 .isActive(true)
                 .build();
 
@@ -250,16 +251,16 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("Should return true for admin")
-        void shouldReturnTrueForAdmin() {
-            // Given
+        @DisplayName("Should return false for admin without teacher role")
+        void shouldReturnFalseForAdminWithoutTeacherRole() {
+            // Given - admin only has ADMIN role, not TEACHER
             when(userRepository.findById(3L)).thenReturn(Optional.of(adminEntity));
 
             // When
             boolean result = userService.canUserCreateTests(3L);
 
-            // Then
-            assertThat(result).isTrue();
+            // Then - According to POPRAWKI.md, only TEACHER role can create tests
+            assertThat(result).isFalse();
         }
 
         @Test

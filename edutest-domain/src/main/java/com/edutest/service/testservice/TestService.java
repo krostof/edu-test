@@ -45,8 +45,8 @@ public class TestService {
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found with id: " + createdById));
 
         User creator = userMapper.toUser(creatorEntity);
-        if (!creator.isTeacher() && !creator.isAdmin()) {
-            throw new IllegalArgumentException("Only teachers and admins can create tests");
+        if (!creator.isTeacher()) {
+            throw new IllegalArgumentException("Only teachers can create tests");
         }
 
         validateTestDates(startDate, endDate);

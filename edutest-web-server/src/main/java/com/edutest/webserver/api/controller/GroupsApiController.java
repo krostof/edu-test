@@ -38,13 +38,15 @@ public class GroupsApiController implements GroupsApi {
         log.info("Getting groups for user={}", currentUser.getId());
 
         List<StudentGroup> groups;
-        if (currentUser.getRole() == UserEntityRole.STUDENT) {
+        if (currentUser.isStudent()) {
             Optional<StudentGroup> studentGroup = studentGroupService.findByStudent(currentUser.getId());
             groups = studentGroup.map(List::of).orElse(List.of());
-        } else if (currentUser.getRole() == UserEntityRole.ADMIN) {
+        } else if (currentUser.isAdmin()) {
             groups = studentGroupService.findAll(org.springframework.data.domain.Pageable.unpaged()).getContent();
-        } else {
+        } else if (currentUser.isTeacher()) {
             groups = studentGroupService.findByTeacher(currentUser.getId());
+        } else {
+            groups = List.of();
         }
 
         List<com.edutest.api.model.StudentGroup> result = groups.stream()

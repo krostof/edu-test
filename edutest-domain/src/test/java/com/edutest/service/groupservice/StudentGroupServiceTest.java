@@ -24,6 +24,7 @@ import org.mockito.quality.Strictness;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -89,12 +90,12 @@ class StudentGroupServiceTest {
 
         teacherUser = User.builder()
                 .username("teacher1")
-                .role(UserRole.TEACHER)
+                .roles(Set.of(UserRole.TEACHER))
                 .build();
 
         studentUser = User.builder()
                 .username("student1")
-                .role(UserRole.STUDENT)
+                .roles(Set.of(UserRole.STUDENT))
                 .build();
 
         studentGroup = StudentGroup.builder()

@@ -8,6 +8,8 @@ import com.edutest.persistance.entity.user.UserEntityRole;
 import org.springframework.stereotype.Component;
 
 import java.time.ZoneOffset;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component("securityUserProfileMapper")
 public class UserProfileMapper {
@@ -17,7 +19,7 @@ public class UserProfileMapper {
             return null;
         }
 
-        return new UserProfile()
+        UserProfile profile = new UserProfile()
                 .id(entity.getId())
                 .username(entity.getUsername())
                 .email(entity.getEmail())
@@ -27,6 +29,16 @@ public class UserProfileMapper {
                 .isActive(entity.getIsActive())
                 .createdAt(entity.getCreatedAt() != null ?
                     entity.getCreatedAt().atOffset(ZoneOffset.UTC) : null);
+
+        // Add all roles
+        if (entity.getRoles() != null) {
+            List<UserRole> rolesList = entity.getRoles().stream()
+                    .map(this::toUserRole)
+                    .collect(Collectors.toList());
+            profile.setRoles(rolesList);
+        }
+
+        return profile;
     }
 
     public UserProfile toUserProfile(UserSecurity userSecurity) {
@@ -34,7 +46,7 @@ public class UserProfileMapper {
             return null;
         }
 
-        return new UserProfile()
+        UserProfile profile = new UserProfile()
                 .id(userSecurity.getId())
                 .username(userSecurity.getUsername())
                 .email(userSecurity.getEmail())
@@ -43,6 +55,12 @@ public class UserProfileMapper {
                 .role(userSecurity.getRole())
                 .isActive(userSecurity.getIsActive())
                 .createdAt(userSecurity.getCreatedAt());
+
+        if (userSecurity.getRoles() != null) {
+            profile.setRoles(userSecurity.getRoles());
+        }
+
+        return profile;
     }
 
     public UserSecurity toUserSecurity(UserEntity entity) {
@@ -50,7 +68,7 @@ public class UserProfileMapper {
             return null;
         }
 
-        return new UserSecurity()
+        UserSecurity security = new UserSecurity()
                 .id(entity.getId())
                 .username(entity.getUsername())
                 .email(entity.getEmail())
@@ -64,6 +82,16 @@ public class UserProfileMapper {
                     entity.getCreatedAt().atOffset(ZoneOffset.UTC) : null)
                 .updatedAt(entity.getUpdatedAt() != null ?
                     entity.getUpdatedAt().atOffset(ZoneOffset.UTC) : null);
+
+        // Add all roles
+        if (entity.getRoles() != null) {
+            List<UserRole> rolesList = entity.getRoles().stream()
+                    .map(this::toUserRole)
+                    .collect(Collectors.toList());
+            security.setRoles(rolesList);
+        }
+
+        return security;
     }
 
     public UserEntity toUserEntity(UserProfile userProfile) {
@@ -76,7 +104,14 @@ public class UserProfileMapper {
         entity.setEmail(userProfile.getEmail());
         entity.setFirstName(userProfile.getFirstName());
         entity.setLastName(userProfile.getLastName());
-        entity.setRole(toUserEntityRole(userProfile.getRole()));
+
+        // Support both single role and multiple roles
+        if (userProfile.getRoles() != null && !userProfile.getRoles().isEmpty()) {
+            userProfile.getRoles().forEach(role -> entity.addRole(toUserEntityRole(role)));
+        } else if (userProfile.getRole() != null) {
+            entity.addRole(toUserEntityRole(userProfile.getRole()));
+        }
+
         entity.setIsActive(userProfile.getIsActive());
 
         // Set ID manually if it exists (for updates)

@@ -1,5 +1,6 @@
 package com.edutest.commons.security;
 
+import com.edutest.api.model.UserRole;
 import com.edutest.api.model.UserSecurity;
 import com.edutest.service.security.LoginAndRegisterFacade;
 import lombok.Getter;
@@ -11,8 +12,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -28,7 +31,7 @@ public class LoginUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("User not found with username: " + username);
         }
         UserSecurity user = userOptional.get();
-        log.debug("Loading user: {}, role: {}", username, user.getRole());
+        log.debug("Loading user: {}, roles: {}", username, user.getRoles());
         UserPrincipal principal = UserPrincipal.create(user);
         log.debug("User principal created with authorities: {}", principal.getAuthorities());
         return principal;
@@ -55,9 +58,18 @@ public class LoginUserDetailsService implements UserDetailsService {
         }
 
         public static UserPrincipal create(UserSecurity user) {
-            List<GrantedAuthority> authorities = List.of(
-                    new SimpleGrantedAuthority("ROLE_" + user.getRole().getValue())
-            );
+            List<GrantedAuthority> authorities;
+
+            // Use roles list if available, otherwise fall back to single role
+            if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+                authorities = user.getRoles().stream()
+                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getValue()))
+                        .collect(Collectors.toList());
+            } else if (user.getRole() != null) {
+                authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().getValue()));
+            } else {
+                authorities = new ArrayList<>();
+            }
 
             return new UserPrincipal(
                     user.getId().toString(),

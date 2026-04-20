@@ -5,6 +5,9 @@ import com.edutest.persistance.entity.group.StudentGroupEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "users")
 @Getter
@@ -29,9 +32,12 @@ public class UserEntity extends BaseEntity {
     @Column(name = "last_name", nullable = false, length = 50)
     private String lastName;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
-    private UserEntityRole role;
+    @Column(name = "role")
+    @Builder.Default
+    private Set<UserEntityRole> roles = new HashSet<>();
 
     @Column(name = "is_active", nullable = false)
     @Builder.Default
@@ -48,15 +54,72 @@ public class UserEntity extends BaseEntity {
         return firstName + " " + lastName;
     }
 
+    public boolean hasRole(UserEntityRole role) {
+        return roles != null && roles.contains(role);
+    }
+
     public boolean isStudent() {
-        return UserEntityRole.STUDENT.equals(role);
+        return hasRole(UserEntityRole.STUDENT);
     }
 
     public boolean isTeacher() {
-        return UserEntityRole.TEACHER.equals(role);
+        return hasRole(UserEntityRole.TEACHER);
     }
 
     public boolean isAdmin() {
-        return UserEntityRole.ADMIN.equals(role);
+        return hasRole(UserEntityRole.ADMIN);
+    }
+
+    /**
+     * Helper method to add a role to the user.
+     */
+    public void addRole(UserEntityRole role) {
+        if (roles == null) {
+            roles = new HashSet<>();
+        }
+        roles.add(role);
+    }
+
+    /**
+     * Helper method to remove a role from the user.
+     */
+    public void removeRole(UserEntityRole role) {
+        if (roles != null) {
+            roles.remove(role);
+        }
+    }
+
+    /**
+     * Backwards-compatible getter that returns the primary role.
+     * Returns the first role found, prioritizing ADMIN > TEACHER > STUDENT.
+     * @deprecated Use getRoles() instead for multi-role support.
+     */
+    @Deprecated
+    public UserEntityRole getRole() {
+        if (roles == null || roles.isEmpty()) {
+            return null;
+        }
+        if (roles.contains(UserEntityRole.ADMIN)) {
+            return UserEntityRole.ADMIN;
+        }
+        if (roles.contains(UserEntityRole.TEACHER)) {
+            return UserEntityRole.TEACHER;
+        }
+        return UserEntityRole.STUDENT;
+    }
+
+    /**
+     * Backwards-compatible setter that sets a single role.
+     * @deprecated Use addRole() instead for multi-role support.
+     */
+    @Deprecated
+    public void setRole(UserEntityRole role) {
+        if (roles == null) {
+            roles = new HashSet<>();
+        }
+        roles.clear();
+        if (role != null) {
+            roles.add(role);
+        }
     }
 }

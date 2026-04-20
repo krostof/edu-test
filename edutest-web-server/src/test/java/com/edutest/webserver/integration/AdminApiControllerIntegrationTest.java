@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
+import java.util.Set;
+
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -292,7 +294,7 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
                     .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                     .firstName("To")
                     .lastName("Delete")
-                    .role(UserEntityRole.STUDENT)
+                    .roles(Set.of(UserEntityRole.STUDENT))
                     .isActive(true)
                     .build());
 
@@ -366,7 +368,7 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
                     .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                     .firstName("Batch")
                     .lastName("One")
-                    .role(UserEntityRole.STUDENT)
+                    .roles(Set.of(UserEntityRole.STUDENT))
                     .isActive(true)
                     .build());
 
@@ -376,7 +378,7 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
                     .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                     .firstName("Batch")
                     .lastName("Two")
-                    .role(UserEntityRole.STUDENT)
+                    .roles(Set.of(UserEntityRole.STUDENT))
                     .isActive(true)
                     .build());
 
@@ -407,7 +409,7 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
                     .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                     .firstName("Delete")
                     .lastName("One")
-                    .role(UserEntityRole.STUDENT)
+                    .roles(Set.of(UserEntityRole.STUDENT))
                     .isActive(true)
                     .build());
 
@@ -417,7 +419,7 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
                     .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                     .firstName("Delete")
                     .lastName("Two")
-                    .role(UserEntityRole.STUDENT)
+                    .roles(Set.of(UserEntityRole.STUDENT))
                     .isActive(true)
                     .build());
 

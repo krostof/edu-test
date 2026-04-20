@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api")
 @Slf4j
-@PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+@PreAuthorize("hasRole('TEACHER')")
 public class AssignmentApiController implements AssignmentsApi {
 
     private final AssignmentService assignmentService;

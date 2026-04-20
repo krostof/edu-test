@@ -9,7 +9,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -43,7 +46,14 @@ public class LoginAndRegisterFacade {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
-        user.setRole(request.getRole() != null ? request.getRole() : UserEntityRole.STUDENT);
+        // Support both single role (backwards compatible) and multiple roles
+        if (request.getRoles() != null && !request.getRoles().isEmpty()) {
+            request.getRoles().forEach(user::addRole);
+        } else if (request.getRole() != null) {
+            user.addRole(request.getRole());
+        } else {
+            user.addRole(UserEntityRole.STUDENT);
+        }
         user.setIsActive(true);
         user.setStudentNumber(request.getStudentNumber());
 
@@ -56,20 +66,33 @@ public class LoginAndRegisterFacade {
     }
 
     private UserSecurity mapToUserSecurity(UserEntity entity) {
-        return new UserSecurity()
+        // Get the primary role for backwards compatibility with API
+        UserEntityRole primaryRole = entity.getRole();
+
+        UserSecurity security = new UserSecurity()
                 .id(entity.getId())
                 .username(entity.getUsername())
                 .email(entity.getEmail())
                 .password(entity.getPassword())
                 .firstName(entity.getFirstName())
                 .lastName(entity.getLastName())
-                .role(toUserRole(entity.getRole()))
+                .role(toUserRole(primaryRole))
                 .isActive(entity.getIsActive())
                 .studentNumber(entity.getStudentNumber())
                 .createdAt(entity.getCreatedAt() != null ?
                     entity.getCreatedAt().atOffset(java.time.ZoneOffset.UTC) : null)
                 .updatedAt(entity.getUpdatedAt() != null ?
                     entity.getUpdatedAt().atOffset(java.time.ZoneOffset.UTC) : null);
+
+        // Store all roles as a list for multi-role support
+        if (entity.getRoles() != null) {
+            List<com.edutest.api.model.UserRole> rolesList = entity.getRoles().stream()
+                    .map(this::toUserRole)
+                    .collect(Collectors.toList());
+            security.setRoles(rolesList);
+        }
+
+        return security;
     }
 
     private com.edutest.api.model.UserRole toUserRole(UserEntityRole entityRole) {
@@ -93,7 +116,9 @@ public class LoginAndRegisterFacade {
         private String password;
         private String firstName;
         private String lastName;
+        @Deprecated
         private UserEntityRole role;
+        private Set<UserEntityRole> roles;
         private String studentNumber;
     }
 }

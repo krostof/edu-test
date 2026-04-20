@@ -13,6 +13,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Set;
+
 /**
  * Base class for integration tests using H2 in-memory database.
  *
@@ -57,7 +59,7 @@ public abstract class BaseIntegrationTest {
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .firstName("Admin")
                 .lastName("User")
-                .role(UserEntityRole.ADMIN)
+                .roles(Set.of(UserEntityRole.ADMIN))
                 .isActive(true)
                 .build());
 
@@ -68,7 +70,7 @@ public abstract class BaseIntegrationTest {
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .firstName("Teacher")
                 .lastName("User")
-                .role(UserEntityRole.TEACHER)
+                .roles(Set.of(UserEntityRole.TEACHER))
                 .isActive(true)
                 .build());
 
@@ -79,7 +81,7 @@ public abstract class BaseIntegrationTest {
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .firstName("Student")
                 .lastName("User")
-                .role(UserEntityRole.STUDENT)
+                .roles(Set.of(UserEntityRole.STUDENT))
                 .isActive(true)
                 .studentNumber("STU001")
                 .build());

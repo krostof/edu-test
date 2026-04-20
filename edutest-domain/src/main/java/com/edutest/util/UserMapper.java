@@ -9,16 +9,22 @@ import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.entity.user.UserEntityRole;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Component
 public class UserMapper {
 
     public User toUser(UserEntity entity) {
+        Set<UserRole> roles = mapToUserRoles(entity.getRoles());
+
         User user = User.builder()
                 .username(entity.getUsername())
                 .email(entity.getEmail())
                 .firstName(entity.getFirstName())
                 .lastName(entity.getLastName())
-                .role(mapToUserRole(entity.getRole()))
+                .roles(roles)
                 .isActive(entity.getIsActive())
                 .studentNumber(entity.getStudentNumber())
                 .build();
@@ -27,7 +33,16 @@ public class UserMapper {
         user.setUpdatedAt(entity.getUpdatedAt());
         return user;
     }
-    
+
+    private Set<UserRole> mapToUserRoles(Set<UserEntityRole> entityRoles) {
+        if (entityRoles == null || entityRoles.isEmpty()) {
+            return new HashSet<>();
+        }
+        return entityRoles.stream()
+                .map(this::mapToUserRole)
+                .collect(Collectors.toSet());
+    }
+
     private UserRole mapToUserRole(UserEntityRole entityRole) {
         if (entityRole == null) {
             return null;
@@ -48,6 +63,14 @@ public class UserMapper {
         userProfile.setFirstName(entity.getFirstName());
         userProfile.setLastName(entity.getLastName());
         userProfile.setRole(mapToApiUserRole(entity.getRole()));
+
+        // Set all roles
+        if (entity.getRoles() != null && !entity.getRoles().isEmpty()) {
+            userProfile.setRoles(entity.getRoles().stream()
+                    .map(this::mapToApiUserRole)
+                    .collect(Collectors.toList()));
+        }
+
         userProfile.setIsActive(entity.getIsActive());
         return userProfile;
     }
@@ -83,7 +106,7 @@ public class UserMapper {
         entity.setFirstName(request.getFirstName());
         entity.setLastName(request.getLastName());
         entity.setStudentNumber(request.getStudentNumber());
-        entity.setRole(UserEntityRole.STUDENT);
+        entity.addRole(UserEntityRole.STUDENT);
         entity.setIsActive(true);
         return entity;
     }
@@ -95,7 +118,7 @@ public class UserMapper {
         entity.setPassword(encodedPassword);
         entity.setFirstName(request.getFirstName());
         entity.setLastName(request.getLastName());
-        entity.setRole(UserEntityRole.TEACHER);
+        entity.addRole(UserEntityRole.TEACHER);
         entity.setIsActive(true);
         return entity;
     }

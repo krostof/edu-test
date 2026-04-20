@@ -1687,6 +1687,12 @@ components:
           type: string
         role:
           $ref: '#/components/schemas/UserRole'
+          description: Primary role (deprecated, use roles instead)
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRole'
+          description: List of all user roles (supports multiple roles)
         isActive:
           type: boolean
         groupId:
@@ -1900,6 +1906,12 @@ components:
           maxLength: 50
         role:
           $ref: '#/components/schemas/UserRole'
+          description: Primary role (deprecated, use roles instead)
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRole'
+          description: List of all user roles (supports multiple roles)
         isActive:
           type: boolean
           default: true

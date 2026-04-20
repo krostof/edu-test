@@ -90,7 +90,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public boolean canUserCreateTests(Long userId) {
         return userRepository.findById(userId)
-                .map(user -> user.getRole() == UserEntityRole.TEACHER || user.getRole() == UserEntityRole.ADMIN)
+                .map(UserEntity::isTeacher)
                 .orElse(false);
     }
 
@@ -101,15 +101,15 @@ public class UserService {
             return false;
         }
 
-        if (user.getRole() == UserEntityRole.ADMIN) {
+        if (user.isAdmin()) {
             return true;
         }
 
-        if (user.getRole() == UserEntityRole.STUDENT) {
+        if (user.isStudent()) {
             return user.getStudentGroup() != null && user.getStudentGroup().getId().equals(groupId);
         }
 
-        if (user.getRole() == UserEntityRole.TEACHER) {
+        if (user.isTeacher()) {
             return studentGroupJpaRepository.findByTeacher(user).stream()
                     .anyMatch(g -> g.getId().equals(groupId));
         }
@@ -125,11 +125,11 @@ public class UserService {
         }
 
         return switch (permission) {
-            case "CREATE_TEST" -> user.getRole() == UserEntityRole.TEACHER || user.getRole() == UserEntityRole.ADMIN;
-            case "MANAGE_USERS" -> user.getRole() == UserEntityRole.ADMIN;
-            case "MANAGE_GROUPS" -> user.getRole() == UserEntityRole.TEACHER || user.getRole() == UserEntityRole.ADMIN;
-            case "VIEW_ALL_RESULTS" -> user.getRole() == UserEntityRole.TEACHER || user.getRole() == UserEntityRole.ADMIN;
-            case "TAKE_TESTS" -> user.getRole() == UserEntityRole.STUDENT;
+            case "CREATE_TEST" -> user.isTeacher();
+            case "MANAGE_USERS" -> user.isAdmin();
+            case "MANAGE_GROUPS" -> user.isAdmin();
+            case "VIEW_ALL_RESULTS" -> user.isTeacher();
+            case "TAKE_TESTS" -> user.isStudent();
             default -> false;
         };
     }
@@ -196,7 +196,7 @@ public class UserService {
         log.debug("Checking if student {} can take test {}", studentId, testId);
 
         UserEntity student = userRepository.findById(studentId).orElse(null);
-        if (student == null || student.getRole() != UserEntityRole.STUDENT) {
+        if (student == null || !student.isStudent()) {
             return false;
         }
 

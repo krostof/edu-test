@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -37,7 +38,7 @@ class GroupsApiControllerIntegrationTest extends BaseIntegrationTest {
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .firstName("Second")
                 .lastName("Teacher")
-                .role(UserEntityRole.TEACHER)
+                .roles(Set.of(UserEntityRole.TEACHER))
                 .isActive(true)
                 .build());
 
@@ -48,7 +49,7 @@ class GroupsApiControllerIntegrationTest extends BaseIntegrationTest {
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .firstName("Second")
                 .lastName("Student")
-                .role(UserEntityRole.STUDENT)
+                .roles(Set.of(UserEntityRole.STUDENT))
                 .isActive(true)
                 .studentNumber("STU002")
                 .build());

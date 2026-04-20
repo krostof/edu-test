@@ -16,6 +16,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.util.Set;
+
 /**
  * Base class for integration tests using PostgreSQL Testcontainers.
  *
@@ -79,7 +81,7 @@ public abstract class BaseTestcontainersTest {
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .firstName("Admin")
                 .lastName("User")
-                .role(UserEntityRole.ADMIN)
+                .roles(Set.of(UserEntityRole.ADMIN))
                 .isActive(true)
                 .build());
 
@@ -90,7 +92,7 @@ public abstract class BaseTestcontainersTest {
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .firstName("Teacher")
                 .lastName("User")
-                .role(UserEntityRole.TEACHER)
+                .roles(Set.of(UserEntityRole.TEACHER))
                 .isActive(true)
                 .build());
 
@@ -101,7 +103,7 @@ public abstract class BaseTestcontainersTest {
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .firstName("Student")
                 .lastName("User")
-                .role(UserEntityRole.STUDENT)
+                .roles(Set.of(UserEntityRole.STUDENT))
                 .isActive(true)
                 .studentNumber("STU001")
                 .build());
