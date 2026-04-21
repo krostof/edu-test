@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.*;
@@ -38,7 +39,7 @@ class GroupsApiControllerIntegrationTest extends BaseIntegrationTest {
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .firstName("Second")
                 .lastName("Teacher")
-                .roles(Set.of(UserEntityRole.TEACHER))
+                .roles(new HashSet<>(Set.of(UserEntityRole.TEACHER)))
                 .isActive(true)
                 .build());
 
@@ -49,7 +50,7 @@ class GroupsApiControllerIntegrationTest extends BaseIntegrationTest {
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .firstName("Second")
                 .lastName("Student")
-                .roles(Set.of(UserEntityRole.STUDENT))
+                .roles(new HashSet<>(Set.of(UserEntityRole.STUDENT)))
                 .isActive(true)
                 .studentNumber("STU002")
                 .build());

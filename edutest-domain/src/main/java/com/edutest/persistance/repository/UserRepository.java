@@ -27,7 +27,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     
     boolean existsByEmail(String email);
     
-    Page<UserEntity> findByRole(UserEntityRole role, Pageable pageable);
+    @Query("SELECT u FROM UserEntity u WHERE :role MEMBER OF u.roles")
+    Page<UserEntity> findByRole(@Param("role") UserEntityRole role, Pageable pageable);
 
     @Query("SELECT COUNT(DISTINCT sg) FROM StudentGroupEntity sg JOIN sg.teachers t WHERE t.id = :teacherId")
     long countGroupsByTeacherId(@Param("teacherId") Long teacherId);
@@ -39,7 +40,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
            "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%'))")
     Page<UserEntity> searchUsers(@Param("search") String search, Pageable pageable);
 
-    @Query("SELECT u FROM UserEntity u WHERE u.role = :role AND (" +
+    @Query("SELECT u FROM UserEntity u WHERE :role MEMBER OF u.roles AND (" +
            "LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
@@ -48,9 +49,9 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     List<UserEntity> findByStudentGroup(StudentGroupEntity group);
 
-    @Query("SELECT u FROM UserEntity u WHERE u.studentGroup.id = :groupId AND u.role = 'STUDENT'")
+    @Query("SELECT u FROM UserEntity u JOIN u.roles r WHERE u.studentGroup.id = :groupId AND r = 'STUDENT'")
     List<UserEntity> findStudentsByGroupId(@Param("groupId") Long groupId);
 
-    @Query("SELECT u FROM UserEntity u WHERE u.studentGroup IS NULL AND u.role = 'STUDENT'")
+    @Query("SELECT u FROM UserEntity u JOIN u.roles r WHERE u.studentGroup IS NULL AND r = 'STUDENT'")
     List<UserEntity> findStudentsWithoutGroup();
 }

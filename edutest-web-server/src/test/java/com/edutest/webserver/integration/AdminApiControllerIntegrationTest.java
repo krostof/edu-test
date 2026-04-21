@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.*;
@@ -294,7 +295,7 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
                     .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                     .firstName("To")
                     .lastName("Delete")
-                    .roles(Set.of(UserEntityRole.STUDENT))
+                    .roles(new HashSet<>(Set.of(UserEntityRole.STUDENT)))
                     .isActive(true)
                     .build());
 
@@ -368,7 +369,7 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
                     .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                     .firstName("Batch")
                     .lastName("One")
-                    .roles(Set.of(UserEntityRole.STUDENT))
+                    .roles(new HashSet<>(Set.of(UserEntityRole.STUDENT)))
                     .isActive(true)
                     .build());
 
@@ -378,7 +379,7 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
                     .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                     .firstName("Batch")
                     .lastName("Two")
-                    .roles(Set.of(UserEntityRole.STUDENT))
+                    .roles(new HashSet<>(Set.of(UserEntityRole.STUDENT)))
                     .isActive(true)
                     .build());
 
@@ -409,7 +410,7 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
                     .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                     .firstName("Delete")
                     .lastName("One")
-                    .roles(Set.of(UserEntityRole.STUDENT))
+                    .roles(new HashSet<>(Set.of(UserEntityRole.STUDENT)))
                     .isActive(true)
                     .build());
 
@@ -419,7 +420,7 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
                     .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                     .firstName("Delete")
                     .lastName("Two")
-                    .roles(Set.of(UserEntityRole.STUDENT))
+                    .roles(new HashSet<>(Set.of(UserEntityRole.STUDENT)))
                     .isActive(true)
                     .build());
 

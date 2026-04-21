@@ -16,6 +16,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -81,7 +82,7 @@ public abstract class BaseTestcontainersTest {
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .firstName("Admin")
                 .lastName("User")
-                .roles(Set.of(UserEntityRole.ADMIN))
+                .roles(new HashSet<>(Set.of(UserEntityRole.ADMIN)))
                 .isActive(true)
                 .build());
 
@@ -92,7 +93,7 @@ public abstract class BaseTestcontainersTest {
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .firstName("Teacher")
                 .lastName("User")
-                .roles(Set.of(UserEntityRole.TEACHER))
+                .roles(new HashSet<>(Set.of(UserEntityRole.TEACHER)))
                 .isActive(true)
                 .build());
 
@@ -103,7 +104,7 @@ public abstract class BaseTestcontainersTest {
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .firstName("Student")
                 .lastName("User")
-                .roles(Set.of(UserEntityRole.STUDENT))
+                .roles(new HashSet<>(Set.of(UserEntityRole.STUDENT)))
                 .isActive(true)
                 .studentNumber("STU001")
                 .build());
