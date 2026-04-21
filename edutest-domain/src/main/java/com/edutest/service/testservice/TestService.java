@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -280,11 +281,29 @@ public class TestService {
     }
 
     private StudentGroup toStudentGroup(StudentGroupEntity entity) {
-        return StudentGroup.builder()
+        // Force load students to get correct count (they are LAZY loaded)
+        List<User> students = new ArrayList<>();
+        if (entity.getStudents() != null) {
+            for (UserEntity studentEntity : entity.getStudents()) {
+                User student = User.builder()
+                        .username(studentEntity.getUsername())
+                        .email(studentEntity.getEmail())
+                        .firstName(studentEntity.getFirstName())
+                        .lastName(studentEntity.getLastName())
+                        .build();
+                student.setId(studentEntity.getId());
+                students.add(student);
+            }
+        }
+
+        StudentGroup group = StudentGroup.builder()
                 .id(entity.getId())
                 .name(entity.getName())
                 .description(entity.getDescription())
+                .students(students)
                 .build();
+
+        return group;
     }
 
     @Transactional(readOnly = true)
