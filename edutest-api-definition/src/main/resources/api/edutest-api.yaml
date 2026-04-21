@@ -1102,6 +1102,34 @@ paths:
           description: Access denied
 
   # Test Group Management Endpoints
+  /tests/{testId}/available-groups:
+    get:
+      tags:
+        - Tests
+      summary: Get available groups for test
+      description: Get groups that can be assigned to test (teacher's groups not yet assigned)
+      operationId: getAvailableGroupsForTest
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Available groups retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudentGroup'
+        '404':
+          description: Test not found
+
   /tests/{testId}/groups:
     get:
       tags:

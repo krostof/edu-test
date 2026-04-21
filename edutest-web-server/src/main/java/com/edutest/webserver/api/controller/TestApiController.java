@@ -24,6 +24,7 @@ import com.edutest.service.teacher.OpenQuestionGradingService;
 import com.edutest.service.teacher.TeacherAttemptService;
 import com.edutest.service.teacher.TestResultsExportService;
 import com.edutest.service.testservice.TestService;
+import com.edutest.service.groupservice.StudentGroupService;
 import com.edutest.util.AnswerMapper;
 import com.edutest.util.TeacherMapper;
 import com.edutest.util.UserMapper;
@@ -50,6 +51,7 @@ import java.util.stream.Collectors;
 public class TestApiController implements TestsApi {
 
     private final TestService testService;
+    private final StudentGroupService studentGroupService;
     private final TestAttemptService testAttemptService;
     private final TestAttemptManagementService testAttemptManagementService;
     private final TestMapper testMapper;
@@ -172,6 +174,38 @@ public class TestApiController implements TestsApi {
                 .map(this::toTestGroupResponse)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(result);
+    }
+
+    @Override
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<List<com.edutest.api.model.StudentGroup>> getAvailableGroupsForTest(Long testId) {
+        UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
+        log.info("Getting available groups for testId={}, teacherId={}", testId, currentUser.getId());
+
+        // Get teacher's groups
+        List<StudentGroup> teacherGroups = studentGroupService.findByTeacher(currentUser.getId());
+
+        // Get groups already assigned to test
+        List<StudentGroup> assignedGroups = testService.getTestGroups(testId);
+        List<Long> assignedGroupIds = assignedGroups.stream()
+                .map(StudentGroup::getId)
+                .collect(Collectors.toList());
+
+        // Filter out already assigned groups
+        List<com.edutest.api.model.StudentGroup> availableGroups = teacherGroups.stream()
+                .filter(g -> !assignedGroupIds.contains(g.getId()))
+                .map(this::toApiStudentGroup)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(availableGroups);
+    }
+
+    private com.edutest.api.model.StudentGroup toApiStudentGroup(StudentGroup domain) {
+        com.edutest.api.model.StudentGroup api = new com.edutest.api.model.StudentGroup();
+        api.setId(domain.getId());
+        api.setName(domain.getName());
+        api.setDescription(domain.getDescription());
+        return api;
     }
 
     @Override
