@@ -26,6 +26,8 @@ tags:
     description: Test management and execution
   - name: Assignments
     description: Assignment management within tests
+  - name: Student
+    description: Student panel operations
 
 paths:
   # Authentication Endpoints
@@ -700,6 +702,69 @@ paths:
           description: Group or teacher not found
         '403':
           description: Access denied - admin role required
+
+  # Student Panel Endpoints
+  /student/tests:
+    get:
+      tags:
+        - Student
+      summary: Get student tests
+      description: Get all tests assigned to current student with status information
+      operationId: getStudentTests
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: timeStatus
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - ALL
+              - PAST
+              - ACTIVE
+              - UPCOMING
+            default: ALL
+          description: Filter by time status
+      responses:
+        '200':
+          description: Tests retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudentTestResponse'
+        '403':
+          description: Access denied - student role required
+
+  /student/tests/{testId}:
+    get:
+      tags:
+        - Student
+      summary: Get student test details
+      description: Get details of a specific test for current student
+      operationId: getStudentTestById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Test retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentTestResponse'
+        '404':
+          description: Test not found or not accessible
+        '403':
+          description: Access denied - student role required
 
   # Test Management Endpoints
   /tests:
@@ -2902,6 +2967,66 @@ components:
           type: string
           maxLength: 2000
           description: Optional feedback for the student
+
+    # Student Panel Schemas
+    StudentTestResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        description:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        timeLimit:
+          type: integer
+          description: Time limit in minutes
+        allowNavigation:
+          type: boolean
+        assignmentCount:
+          type: integer
+        timeStatus:
+          type: string
+          enum:
+            - PAST
+            - ACTIVE
+            - UPCOMING
+          description: Time-based status of the test
+        attemptStatus:
+          type: string
+          enum:
+            - NOT_STARTED
+            - IN_PROGRESS
+            - COMPLETED
+          description: Student's attempt status for this test
+        attemptId:
+          type: integer
+          format: int64
+          description: ID of the attempt if exists
+        attemptStartedAt:
+          type: string
+          format: date-time
+        attemptFinishedAt:
+          type: string
+          format: date-time
+        score:
+          type: number
+          format: float
+          description: Score if test is completed
+        maxScore:
+          type: number
+          format: float
+          description: Maximum possible score
+        createdByName:
+          type: string
+          description: Name of the test creator
 
     # Error Schemas
     ErrorResponse:

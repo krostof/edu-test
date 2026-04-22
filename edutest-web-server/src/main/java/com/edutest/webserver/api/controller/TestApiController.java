@@ -189,7 +189,7 @@ public class TestApiController implements TestsApi {
         List<StudentGroup> assignedGroups = testService.getTestGroups(testId);
         List<Long> assignedGroupIds = assignedGroups.stream()
                 .map(StudentGroup::getId)
-                .collect(Collectors.toList());
+                .toList();
 
         // Filter out already assigned groups
         List<com.edutest.api.model.StudentGroup> availableGroups = teacherGroups.stream()

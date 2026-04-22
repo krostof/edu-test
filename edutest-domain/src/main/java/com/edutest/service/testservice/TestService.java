@@ -4,10 +4,13 @@ import com.edutest.domain.test.Test;
 import com.edutest.domain.test.TestAttempt;
 import com.edutest.domain.user.User;
 import com.edutest.domain.group.StudentGroup;
+import com.edutest.dto.StudentTestDto;
 import com.edutest.persistance.entity.group.StudentGroupEntity;
+import com.edutest.persistance.entity.test.TestAttemptEntity;
 import com.edutest.persistance.entity.test.TestEntity;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.repository.StudentGroupJpaRepository;
+import com.edutest.persistance.repository.TestAttemptJpaRepository;
 import com.edutest.persistance.repository.TestRepository;
 import com.edutest.persistance.repository.UserRepository;
 import com.edutest.util.TestMapper;
@@ -31,6 +34,7 @@ import java.util.stream.Collectors;
 public class TestService {
 
     private final TestRepository testRepository;
+    private final TestAttemptJpaRepository testAttemptJpaRepository;
     private final UserRepository userRepository;
     private final StudentGroupJpaRepository studentGroupJpaRepository;
     private final UserMapper userMapper;
@@ -145,6 +149,92 @@ public class TestService {
 
         return testRepository.findAvailableTestsForStudent(studentId).stream()
                 .map(testMapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<StudentTestDto> findAllTestsForStudentWithStatus(Long studentId, String timeStatusFilter) {
+        log.debug("Finding all tests for student: {} with filter: {}", studentId, timeStatusFilter);
+        UserEntity studentEntity = userRepository.findById(studentId)
+                .orElseThrow(() -> new IllegalArgumentException("Student not found with id: " + studentId));
+
+        User student = userMapper.toUser(studentEntity);
+        if (!student.isStudent()) {
+            throw new IllegalArgumentException("User with id " + studentId + " is not a student");
+        }
+        // dalczego uzywamy tu TestEntity?
+        List<TestEntity> tests = testRepository.findAllTestsForStudent(studentId);
+        List<TestAttemptEntity> attempts = testAttemptJpaRepository.findByStudentId(studentId);
+
+        // Create a map of testId -> attempt for quick lookup
+        java.util.Map<Long, TestAttemptEntity> attemptMap = attempts.stream()
+                .collect(Collectors.toMap(
+                        a -> a.getTestEntity().getId(),
+                        a -> a,
+                        (a1, a2) -> a1  // In case of duplicates, keep first
+                ));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        return tests.stream()
+                .map(testEntity -> {
+                    StudentTestDto dto = new StudentTestDto();
+                    dto.setId(testEntity.getId());
+                    dto.setTitle(testEntity.getTitle());
+                    dto.setDescription(testEntity.getDescription());
+                    dto.setStartDate(testEntity.getStartDate());
+                    dto.setEndDate(testEntity.getEndDate());
+                    dto.setTimeLimit(testEntity.getTimeLimit());
+                    dto.setAllowNavigation(testEntity.getAllowNavigation());
+                    dto.setAssignmentCount(testEntity.getAssignmentEntities() != null ? testEntity.getAssignmentEntities().size() : 0);
+
+                    // Calculate time status
+                    if (testEntity.getEndDate().isBefore(now)) {
+                        dto.setTimeStatus("PAST");
+                    } else if (testEntity.getStartDate().isAfter(now)) {
+                        dto.setTimeStatus("UPCOMING");
+                    } else {
+                        dto.setTimeStatus("ACTIVE");
+                    }
+
+                    // Calculate attempt status
+                    TestAttemptEntity attempt = attemptMap.get(testEntity.getId());
+                    if (attempt == null) {
+                        dto.setAttemptStatus("NOT_STARTED");
+                    } else if (attempt.getIsCompleted()) {
+                        dto.setAttemptStatus("COMPLETED");
+                        dto.setAttemptId(attempt.getId());
+                        dto.setAttemptStartedAt(attempt.getStartedAt());
+                        dto.setAttemptFinishedAt(attempt.getFinishedAt());
+                        dto.setScore(attempt.getScore());
+                    } else {
+                        dto.setAttemptStatus("IN_PROGRESS");
+                        dto.setAttemptId(attempt.getId());
+                        dto.setAttemptStartedAt(attempt.getStartedAt());
+                    }
+
+                    // Calculate max score
+                    if (testEntity.getAssignmentEntities() != null) {
+                        float maxScore = (float) testEntity.getAssignmentEntities().stream()
+                                .mapToDouble(a -> a.getPoints() != null ? a.getPoints() : 0)
+                                .sum();
+                        dto.setMaxScore(maxScore);
+                    }
+
+                    // Creator name
+                    if (testEntity.getCreatedBy() != null) {
+                        dto.setCreatedByName(testEntity.getCreatedBy().getFullName());
+                    }
+
+                    return dto;
+                })
+                .filter(dto -> {
+                    // Apply time status filter if provided
+                    if (timeStatusFilter == null || timeStatusFilter.isEmpty() || "ALL".equalsIgnoreCase(timeStatusFilter)) {
+                        return true;
+                    }
+                    return timeStatusFilter.equalsIgnoreCase(dto.getTimeStatus());
+                })
                 .collect(Collectors.toList());
     }
 

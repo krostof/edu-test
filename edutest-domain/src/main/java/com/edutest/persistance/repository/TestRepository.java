@@ -42,8 +42,22 @@ public interface TestRepository extends JpaRepository<TestEntity, Long> {
     @Query("SELECT t FROM TestEntity t WHERE t.startDate >= :startDate AND t.endDate <= :endDate")
     List<TestEntity> findTestsByDateRange(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT DISTINCT t FROM TestEntity t JOIN t.assignedGroups g JOIN g.students s WHERE s.id = :studentId AND t.startDate <= CURRENT_TIMESTAMP AND t.endDate >= CURRENT_TIMESTAMP")
+    @Query(value = "SELECT DISTINCT t.* FROM tests t " +
+            "JOIN test_groups tg ON t.id = tg.test_id " +
+            "JOIN student_groups sg ON tg.group_id = sg.id " +
+            "JOIN users u ON u.student_group_id = sg.id " +
+            "WHERE u.id = :studentId " +
+            "AND t.start_date <= CURRENT_TIMESTAMP " +
+            "AND t.end_date >= CURRENT_TIMESTAMP", nativeQuery = true)
     List<TestEntity> findAvailableTestsForStudent(@Param("studentId") Long studentId);
+
+    @Query(value = "SELECT DISTINCT t.* FROM tests t " +
+            "JOIN test_groups tg ON t.id = tg.test_id " +
+            "JOIN student_groups sg ON tg.group_id = sg.id " +
+            "JOIN users u ON u.student_group_id = sg.id " +
+            "WHERE u.id = :studentId " +
+            "ORDER BY t.start_date DESC", nativeQuery = true)
+    List<TestEntity> findAllTestsForStudent(@Param("studentId") Long studentId);
 
     @Query("SELECT t FROM TestEntity t JOIN t.assignedGroups g WHERE g.id = :groupId")
     List<TestEntity> findTestsByGroupId(@Param("groupId") Long groupId);
