@@ -1,10 +1,11 @@
 package com.edutest.util;
 
-import com.edutest.api.model.Test;
-import com.edutest.api.model.TestAttempt;
-import com.edutest.api.model.TestDetails;
-import com.edutest.api.model.UserProfile;
+import com.edutest.api.model.*;
 import com.edutest.domain.user.User;
+import com.edutest.dto.PreviousAnswerDto;
+import com.edutest.dto.QuestionOptionDto;
+import com.edutest.dto.QuestionViewDto;
+import com.edutest.dto.TestAttemptStateDto;
 import com.edutest.persistance.entity.test.TestAttemptEntity;
 import com.edutest.persistance.entity.test.TestEntity;
 import com.edutest.persistance.entity.user.UserEntity;
@@ -179,5 +180,71 @@ public class TestMapper {
         });
 
         return profile;
+    }
+
+    public TestAttemptState toApiAttemptState(TestAttemptStateDto dto) {
+        TestAttemptState api = new TestAttemptState();
+        api.setAttemptId(dto.getAttemptId());
+        api.setTestId(dto.getTestId());
+        api.setTestTitle(dto.getTestTitle());
+        api.setCurrentQuestionIndex(dto.getCurrentQuestionIndex());
+        api.setTotalQuestions(dto.getTotalQuestions());
+        api.setRemainingTimeSeconds(dto.getRemainingTimeSeconds());
+        if (dto.getStartedAt() != null) {
+            api.setStartedAt(dto.getStartedAt().atOffset(ZoneOffset.UTC));
+        }
+        api.setIsCompleted(dto.getIsCompleted());
+        api.setAllowNavigation(dto.getAllowNavigation());
+        api.setAssignmentOrder(dto.getAssignmentOrder());
+        api.setAnsweredAssignmentIds(dto.getAnsweredAssignmentIds());
+        return api;
+    }
+
+    public QuestionView toApiQuestionView(QuestionViewDto dto) {
+        QuestionView api = new QuestionView();
+        api.setAssignmentId(dto.getAssignmentId());
+        api.setQuestionIndex(dto.getQuestionIndex());
+        api.setTotalQuestions(dto.getTotalQuestions());
+        api.setTitle(dto.getTitle());
+        api.setDescription(dto.getDescription());
+        if (dto.getAssignmentType() != null) {
+            api.setAssignmentType(QuestionView.AssignmentTypeEnum.fromValue(dto.getAssignmentType()));
+        }
+        api.setPoints(dto.getPoints());
+        api.setProgrammingLanguage(dto.getProgrammingLanguage());
+        api.setStarterCode(dto.getStarterCode());
+
+        if (dto.getOptions() != null) {
+            api.setOptions(dto.getOptions().stream()
+                    .map(this::toApiQuestionOption)
+                    .collect(Collectors.toList()));
+        }
+
+        if (dto.getPreviousAnswer() != null) {
+            api.setPreviousAnswer(toApiPreviousAnswer(dto.getPreviousAnswer()));
+        }
+
+        return api;
+    }
+
+    private QuestionOption toApiQuestionOption(QuestionOptionDto dto) {
+        QuestionOption api = new QuestionOption();
+        api.setId(dto.getId());
+        api.setText(dto.getText());
+        api.setOrderNumber(dto.getOrderNumber());
+        return api;
+    }
+
+    private PreviousAnswer toApiPreviousAnswer(PreviousAnswerDto dto) {
+        PreviousAnswer api = new PreviousAnswer();
+        api.setSelectedOptionId(dto.getSelectedOptionId());
+        api.setSelectedOptionIds(dto.getSelectedOptionIds());
+        api.setAnswerText(dto.getAnswerText());
+        api.setSourceCode(dto.getSourceCode());
+        api.setProgrammingLanguage(dto.getProgrammingLanguage());
+        if (dto.getAnsweredAt() != null) {
+            api.setAnsweredAt(dto.getAnsweredAt().atOffset(ZoneOffset.UTC));
+        }
+        return api;
     }
 }

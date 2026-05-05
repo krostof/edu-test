@@ -25,6 +25,9 @@ import com.edutest.service.teacher.TeacherAttemptService;
 import com.edutest.service.teacher.TestResultsExportService;
 import com.edutest.service.testservice.TestService;
 import com.edutest.service.groupservice.StudentGroupService;
+import com.edutest.service.attempt.TestAttemptStateService;
+import com.edutest.dto.TestAttemptStateDto;
+import com.edutest.dto.QuestionViewDto;
 import com.edutest.util.AnswerMapper;
 import com.edutest.util.TeacherMapper;
 import com.edutest.util.UserMapper;
@@ -65,6 +68,7 @@ public class TestApiController implements TestsApi {
     private final OpenQuestionGradingService gradingService;
     private final TestResultsExportService exportService;
     private final TeacherMapper teacherMapper;
+    private final TestAttemptStateService attemptStateService;
 
     @Override
     @PreAuthorize("hasRole('TEACHER')")
@@ -298,6 +302,43 @@ public class TestApiController implements TestsApi {
                 testId, attemptId, currentUser.getId());
 
         return ResponseEntity.ok(answerMapper.toApiTestResultResponse(resultDto));
+    }
+
+    // ===================== Test Attempt State Endpoints =====================
+
+    @Override
+    public ResponseEntity<TestAttemptState> getTestAttemptState(Long testId, Long attemptId) {
+        UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
+        log.info("Getting test attempt state: testId={}, attemptId={}, studentId={}",
+                testId, attemptId, currentUser.getId());
+
+        TestAttemptStateDto stateDto = attemptStateService.getAttemptState(
+                testId, attemptId, currentUser.getId());
+
+        return ResponseEntity.ok(testMapper.toApiAttemptState(stateDto));
+    }
+
+    @Override
+    public ResponseEntity<QuestionView> getQuestionByIndex(Long testId, Long attemptId, Integer questionIndex) {
+        UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
+        log.info("Getting question by index: testId={}, attemptId={}, index={}, studentId={}",
+                testId, attemptId, questionIndex, currentUser.getId());
+
+        QuestionViewDto questionDto = attemptStateService.getQuestionByIndex(
+                testId, attemptId, questionIndex, currentUser.getId());
+
+        return ResponseEntity.ok(testMapper.toApiQuestionView(questionDto));
+    }
+
+    @Override
+    public ResponseEntity<Void> updateNavigation(Long testId, Long attemptId, UpdateNavigationRequest request) {
+        UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
+        log.info("Updating navigation: testId={}, attemptId={}, index={}, studentId={}",
+                testId, attemptId, request.getQuestionIndex(), currentUser.getId());
+
+        attemptStateService.updateNavigation(testId, attemptId, request.getQuestionIndex(), currentUser.getId());
+
+        return ResponseEntity.ok().build();
     }
 
     // ===================== Phase 2: Teacher Panel Endpoints =====================

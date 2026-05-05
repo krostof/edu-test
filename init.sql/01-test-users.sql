@@ -3,6 +3,9 @@
 -- Hash BCrypt został wygenerowany za pomocą BCryptPasswordEncoder (strength 10)
 -- Aby wygenerować nowy hash, uruchom: mvn exec:java -Dexec.mainClass="com.edutest.webserver.util.BCryptHashGenerator"
 
+-- Usuń constraint NOT NULL z kolumny role (teraz używamy tabeli user_roles)
+ALTER TABLE users ALTER COLUMN role DROP NOT NULL;
+
 -- Administratorzy (3)
 INSERT INTO users (username, email, password, first_name, last_name, role, is_active, student_number, created_at, updated_at)
 VALUES
@@ -42,4 +45,51 @@ VALUES
     ('nieaktywny_student', 'nieaktywny@edutest.pl', '$2a$10$ruJf3.J8/4A5UPkAGYEOZOFBc72vyz3N1DoXKaWgkn9DNnBBIlbES', 'Krzysztof', 'Nowakowski', 'STUDENT', false, 'S001244', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('nieaktywny_teacher', 'nieaktywny.nauczyciel@edutest.pl', '$2a$10$ruJf3.J8/4A5UPkAGYEOZOFBc72vyz3N1DoXKaWgkn9DNnBBIlbES', 'Łucja', 'Olszewska', 'TEACHER', false, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (username) DO NOTHING;
+
+-- Role użytkowników (nowa tabela user_roles)
+-- Administratorzy
+INSERT INTO user_roles (user_id, role)
+SELECT id, 'ADMIN' FROM users WHERE username IN ('admin', 'admin2', 'superadmin')
+ON CONFLICT DO NOTHING;
+
+-- Nauczyciele
+INSERT INTO user_roles (user_id, role)
+SELECT id, 'TEACHER' FROM users WHERE username IN ('nauczyciel1', 'nauczyciel2', 'nauczyciel3', 'nauczyciel4', 'nauczyciel5', 'nieaktywny_teacher')
+ON CONFLICT DO NOTHING;
+
+-- Studenci
+INSERT INTO user_roles (user_id, role)
+SELECT id, 'STUDENT' FROM users WHERE username IN ('student1', 'student2', 'student3', 'student4', 'student5', 'student6', 'student7', 'student8', 'student9', 'student10', 'nieaktywny_student')
+ON CONFLICT DO NOTHING;
+
+-- Testowe grupy studentów
+INSERT INTO student_groups (name, description, created_at, updated_at)
+VALUES
+    ('Grupa A - Informatyka', 'Studenci pierwszego roku informatyki', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('Grupa B - Informatyka', 'Studenci drugiego roku informatyki', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('Grupa C - Matematyka', 'Studenci pierwszego roku matematyki', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT DO NOTHING;
+
+-- Przypisanie nauczycieli do grup (tabela group_teachers)
+-- Każdy aktywny nauczyciel jest przypisany do wszystkich grup
+INSERT INTO group_teachers (group_id, teacher_id)
+SELECT sg.id, u.id
+FROM student_groups sg
+CROSS JOIN users u
+JOIN user_roles ur ON u.id = ur.user_id
+WHERE ur.role = 'TEACHER' AND u.is_active = true
+ON CONFLICT DO NOTHING;
+
+-- Przypisanie studentów do grup
+-- Studenci 1-4 do Grupy A
+UPDATE users SET student_group_id = (SELECT id FROM student_groups WHERE name = 'Grupa A - Informatyka')
+WHERE username IN ('student1', 'student2', 'student3', 'student4');
+
+-- Studenci 5-7 do Grupy B
+UPDATE users SET student_group_id = (SELECT id FROM student_groups WHERE name = 'Grupa B - Informatyka')
+WHERE username IN ('student5', 'student6', 'student7');
+
+-- Studenci 8-10 do Grupy C
+UPDATE users SET student_group_id = (SELECT id FROM student_groups WHERE name = 'Grupa C - Matematyka')
+WHERE username IN ('student8', 'student9', 'student10');
 
