@@ -31,6 +31,9 @@ public class AnswerDto {
     private String compilationStatus;
     private String compilationError;
     private String executionStatus;
+    private List<TestCaseResultDto> testCaseResults;
+    private Integer testCasesPassed;
+    private Integer testCasesTotal;
 
     // Grading fields
     private Float score;

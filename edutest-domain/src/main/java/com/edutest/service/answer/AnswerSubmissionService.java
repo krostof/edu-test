@@ -2,6 +2,8 @@ package com.edutest.service.answer;
 
 import com.edutest.dto.AnswerDto;
 import com.edutest.dto.SubmitAnswerRequestDto;
+import com.edutest.dto.TestCaseResultDto;
+import com.edutest.persistance.entity.test.TestCaseResultEntity;
 import com.edutest.persistance.entity.assigment.AssignmentEntity;
 import com.edutest.persistance.entity.assigment.AssignmentType;
 import com.edutest.persistance.entity.assigment.coding.CodingAssignmentEntity;
@@ -266,6 +268,11 @@ public class AnswerSubmissionService {
             throw new IllegalArgumentException("Programming language is required for coding assignments");
         }
 
+        if (!assignment.isLanguageAllowed(request.getProgrammingLanguage())) {
+            throw new IllegalArgumentException("Programming language '" + request.getProgrammingLanguage()
+                    + "' is not allowed for this assignment. Allowed: " + assignment.getAllowedLanguagesList());
+        }
+
         UserEntity student = userRepository.findById(studentId)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found"));
 
@@ -317,6 +324,17 @@ public class AnswerSubmissionService {
     }
 
     private AnswerDto mapCodeSubmissionToDto(CodeSubmissionEntity submission) {
+        List<TestCaseResultEntity> results = submission.getTestCaseResults();
+        List<TestCaseResultDto> resultDtos = results == null ? List.of()
+                : results.stream()
+                        .map(this::mapTestCaseResult)
+                        .collect(Collectors.toList());
+
+        int passed = (int) (results == null ? 0L : results.stream()
+                .filter(r -> Boolean.TRUE.equals(r.getPassed()))
+                .count());
+        int total = results == null ? 0 : results.size();
+
         return AnswerDto.builder()
                 .id(submission.getId())
                 .assignmentId(submission.getAssignment().getId())
@@ -329,8 +347,33 @@ public class AnswerSubmissionService {
                 .compilationError(submission.getCompilationError())
                 .executionStatus(submission.getExecutionStatus() != null
                         ? submission.getExecutionStatus().name() : null)
+                .testCaseResults(resultDtos)
+                .testCasesPassed(passed)
+                .testCasesTotal(total)
                 .score(submission.getTotalScore())
                 .isGraded(submission.getTotalScore() != null)
                 .build();
+    }
+
+    private TestCaseResultDto mapTestCaseResult(TestCaseResultEntity result) {
+        boolean isPublic = result.getTestCase() != null
+                && Boolean.TRUE.equals(result.getTestCase().getIsPublic());
+        TestCaseResultDto.TestCaseResultDtoBuilder builder = TestCaseResultDto.builder()
+                .testCaseId(result.getTestCase() != null ? result.getTestCase().getId() : null)
+                .isPublic(isPublic)
+                .passed(result.getPassed())
+                .executionTimeMs(result.getExecutionTimeMs())
+                .memoryUsedMb(result.getMemoryUsedMb());
+
+        // Hidden test cases: don't reveal IO data or detailed errors to the student.
+        if (isPublic) {
+            builder
+                    .description(result.getTestCase().getDescription())
+                    .inputData(result.getTestCase().getInputData())
+                    .expectedOutput(result.getTestCase().getExpectedOutput())
+                    .actualOutput(result.getActualOutput())
+                    .errorMessage(result.getErrorMessage());
+        }
+        return builder.build();
     }
 }

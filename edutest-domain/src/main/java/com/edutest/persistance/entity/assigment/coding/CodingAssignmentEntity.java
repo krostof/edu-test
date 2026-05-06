@@ -51,4 +51,25 @@ public class CodingAssignmentEntity extends AssignmentEntity {
     public float calculateScore(String answer) {
         return 0.0f;
     }
+
+    public List<String> getAllowedLanguagesList() {
+        if (allowedLanguagesStr == null || allowedLanguagesStr.isEmpty()) {
+            return List.of();
+        }
+        return Arrays.stream(allowedLanguagesStr.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+    }
+
+    public boolean isLanguageAllowed(String language) {
+        if (language == null) {
+            return false;
+        }
+        List<String> allowed = getAllowedLanguagesList();
+        if (allowed.isEmpty()) {
+            return true;
+        }
+        return allowed.stream().anyMatch(l -> l.equalsIgnoreCase(language.trim()));
+    }
 }
