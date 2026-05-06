@@ -284,20 +284,39 @@ public class AnswerSubmissionService {
                         .student(student)
                         .build());
 
+        // Auto-save: only persist source code + language. Execution is triggered explicitly
+        // by runCode(...) or as a safety net at test submission via autoGradeAllAnswers().
         submission.setSourceCode(request.getSourceCode());
         submission.setProgrammingLanguage(request.getProgrammingLanguage());
         submission.setSubmittedAt(LocalDateTime.now());
 
-        CodeSubmissionEntity saved = codeSubmissionRepository.save(submission);
+        return codeSubmissionRepository.save(submission);
+    }
 
-        try {
-            codeExecutionService.executeAndPersist(saved);
-        } catch (Exception e) {
-            log.error("Code execution failed for submission {} (attempt {}, assignment {}): {}",
-                    saved.getId(), attempt.getId(), assignment.getId(), e.getMessage(), e);
+    @Transactional
+    public AnswerDto runCode(Long testId, Long attemptId, Long assignmentId, Long studentId) {
+        TestAttemptEntity attempt = validateAndGetAttempt(testId, attemptId, studentId);
+        validateAttemptInProgress(attempt);
+
+        AssignmentEntity assignment = validateAndGetAssignment(testId, assignmentId);
+        if (assignment.getType() != AssignmentType.CODING) {
+            throw new IllegalArgumentException("runCode is only valid for CODING assignments");
         }
 
-        return codeSubmissionRepository.save(saved);
+        CodeSubmissionEntity submission = codeSubmissionRepository
+                .findByTestAttemptIdAndAssignmentId(attemptId, assignmentId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No saved code for this assignment yet. Save your code first."));
+
+        try {
+            codeExecutionService.executeAndPersist(submission);
+        } catch (Exception e) {
+            log.error("Code execution failed for submission {} (attempt {}, assignment {}): {}",
+                    submission.getId(), attemptId, assignmentId, e.getMessage(), e);
+        }
+
+        CodeSubmissionEntity saved = codeSubmissionRepository.save(submission);
+        return mapCodeSubmissionToDto(saved);
     }
 
     private AnswerDto mapAnswerToDto(AssignmentAnswerEntity answer) {

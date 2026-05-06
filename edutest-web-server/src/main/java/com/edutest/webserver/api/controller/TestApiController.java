@@ -250,6 +250,21 @@ public class TestApiController implements TestsApi {
         return ResponseEntity.ok(answerMapper.toApiAnswerResponse(answerDto));
     }
 
+    @PostMapping("/tests/{testId}/attempts/{attemptId}/answers/{assignmentId}/run")
+    public ResponseEntity<AnswerDto> runCode(
+            @PathVariable Long testId,
+            @PathVariable Long attemptId,
+            @PathVariable Long assignmentId) {
+        UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
+        log.info("Running code: testId={}, attemptId={}, assignmentId={}, studentId={}",
+                testId, attemptId, assignmentId, currentUser.getId());
+
+        AnswerDto result = answerSubmissionService.runCode(
+                testId, attemptId, assignmentId, currentUser.getId());
+
+        return ResponseEntity.ok(result);
+    }
+
     @Override
     public ResponseEntity<AnswerResponse> getAnswer(Long testId, Long attemptId, Long assignmentId) {
         UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
