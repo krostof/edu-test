@@ -7,8 +7,11 @@ import com.edutest.persistance.entity.assigment.common.AssignmentAnswerEntity;
 import com.edutest.persistance.entity.code.CodeSubmissionEntity;
 import com.edutest.persistance.entity.test.TestAttemptEntity;
 import com.edutest.persistance.entity.test.TestEntity;
+import com.edutest.persistance.entity.code.ExecutionStatusEnum;
 import com.edutest.persistance.repository.*;
+import com.edutest.service.codeexecution.CodeExecutionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TestSubmissionService {
@@ -24,6 +28,7 @@ public class TestSubmissionService {
     private final AssignmentAnswerJpaRepository answerRepository;
     private final CodeSubmissionJpaRepository codeSubmissionRepository;
     private final AssignmentJpaRepository assignmentRepository;
+    private final CodeExecutionService codeExecutionService;
 
     @Transactional
     public TestSubmissionResultDto submitTestAttempt(Long testId, Long attemptId, Long studentId) {
@@ -74,6 +79,19 @@ public class TestSubmissionService {
                 if (type == AssignmentType.SINGLE_CHOICE || type == AssignmentType.MULTIPLE_CHOICE) {
                     answer.autoGrade();
                     answerRepository.save(answer);
+                }
+            }
+        }
+
+        for (CodeSubmissionEntity submission : codeSubmissionRepository.findByTestAttemptId(attemptId)) {
+            if (submission.getExecutionStatus() == null
+                    || submission.getExecutionStatus() == ExecutionStatusEnum.NOT_EXECUTED) {
+                try {
+                    codeExecutionService.executeAndPersist(submission);
+                    codeSubmissionRepository.save(submission);
+                } catch (Exception e) {
+                    log.error("Auto-grade code execution failed for submission {}: {}",
+                            submission.getId(), e.getMessage(), e);
                 }
             }
         }

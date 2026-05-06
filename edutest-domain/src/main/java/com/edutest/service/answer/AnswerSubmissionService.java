@@ -15,6 +15,7 @@ import com.edutest.persistance.entity.test.TestAttemptEntity;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.repository.*;
 import com.edutest.service.attempt.AttemptRandomizationService;
+import com.edutest.service.codeexecution.CodeExecutionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
@@ -39,6 +40,7 @@ public class AnswerSubmissionService {
     private final ChoiceOptionJpaRepository choiceOptionRepository;
     private final UserRepository userRepository;
     private final AttemptRandomizationService randomizationService;
+    private final CodeExecutionService codeExecutionService;
 
     @Transactional
     public AnswerDto submitAnswer(Long testId, Long attemptId, Long assignmentId, Long studentId, SubmitAnswerRequestDto request) {
@@ -279,7 +281,16 @@ public class AnswerSubmissionService {
         submission.setProgrammingLanguage(request.getProgrammingLanguage());
         submission.setSubmittedAt(LocalDateTime.now());
 
-        return codeSubmissionRepository.save(submission);
+        CodeSubmissionEntity saved = codeSubmissionRepository.save(submission);
+
+        try {
+            codeExecutionService.executeAndPersist(saved);
+        } catch (Exception e) {
+            log.error("Code execution failed for submission {} (attempt {}, assignment {}): {}",
+                    saved.getId(), attempt.getId(), assignment.getId(), e.getMessage(), e);
+        }
+
+        return codeSubmissionRepository.save(saved);
     }
 
     private AnswerDto mapAnswerToDto(AssignmentAnswerEntity answer) {

@@ -23,6 +23,7 @@
         <module>edutest-web-server</module>
         <module>edutest-commons</module>
         <module>edutest-domain</module>
+        <module>edutest-code-execution</module>
     </modules>
 
     <properties>
