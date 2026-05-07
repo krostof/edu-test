@@ -17,6 +17,7 @@ import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.entity.user.UserEntityRole;
 import com.edutest.dto.AttemptIncidentDto;
 import com.edutest.dto.RecordIncidentRequestDto;
+import com.edutest.dto.RunStatusDto;
 import com.edutest.service.TestAttemptService;
 import com.edutest.service.attempt.TestAttemptManagementService;
 import com.edutest.service.answer.AnswerSubmissionService;
@@ -274,18 +275,30 @@ public class TestApiController implements TestsApi {
     }
 
     @PostMapping("/tests/{testId}/attempts/{attemptId}/answers/{assignmentId}/run")
-    public ResponseEntity<AnswerDto> runCode(
+    public ResponseEntity<RunStatusDto> runCode(
             @PathVariable Long testId,
             @PathVariable Long attemptId,
             @PathVariable Long assignmentId) {
         UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
-        log.info("Running code: testId={}, attemptId={}, assignmentId={}, studentId={}",
+        log.info("Triggering async run: testId={}, attemptId={}, assignmentId={}, studentId={}",
                 testId, attemptId, assignmentId, currentUser.getId());
 
-        AnswerDto result = answerSubmissionService.runCode(
+        RunStatusDto status = answerSubmissionService.runCode(
                 testId, attemptId, assignmentId, currentUser.getId());
 
-        return ResponseEntity.ok(result);
+        // 202 Accepted — work is queued, client should poll for completion
+        return ResponseEntity.accepted().body(status);
+    }
+
+    @GetMapping("/tests/{testId}/attempts/{attemptId}/answers/{assignmentId}/run-status")
+    public ResponseEntity<RunStatusDto> getRunStatus(
+            @PathVariable Long testId,
+            @PathVariable Long attemptId,
+            @PathVariable Long assignmentId) {
+        UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
+        RunStatusDto status = answerSubmissionService.getRunStatus(
+                testId, attemptId, assignmentId, currentUser.getId());
+        return ResponseEntity.ok(status);
     }
 
     @Override

@@ -16,8 +16,11 @@ import com.edutest.persistance.entity.code.CodeSubmissionEntity;
 import com.edutest.persistance.entity.test.TestAttemptEntity;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.repository.*;
+import com.edutest.dto.RunStatusDto;
 import com.edutest.service.attempt.AttemptRandomizationService;
+import com.edutest.service.codeexecution.AsyncCodeRunService;
 import com.edutest.service.codeexecution.CodeExecutionService;
+import com.edutest.service.codeexecution.CodeRunJobRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
@@ -43,6 +46,8 @@ public class AnswerSubmissionService {
     private final UserRepository userRepository;
     private final AttemptRandomizationService randomizationService;
     private final CodeExecutionService codeExecutionService;
+    private final AsyncCodeRunService asyncCodeRunService;
+    private final CodeRunJobRegistry runJobRegistry;
 
     @Transactional
     public AnswerDto submitAnswer(Long testId, Long attemptId, Long assignmentId, Long studentId, SubmitAnswerRequestDto request) {
@@ -293,8 +298,17 @@ public class AnswerSubmissionService {
         return codeSubmissionRepository.save(submission);
     }
 
+    /**
+     * Kick off asynchronous preview execution.
+     *
+     * <p>Returns immediately with PENDING status; the worker thread runs Docker and
+     * updates the registry. Frontend polls {@link #getRunStatus} for completion.
+     *
+     * <p>If a run is already pending for this submission, the new request replaces it
+     * (last click wins). The previous worker continues but its result is discarded.
+     */
     @Transactional(readOnly = true)
-    public AnswerDto runCode(Long testId, Long attemptId, Long assignmentId, Long studentId) {
+    public RunStatusDto runCode(Long testId, Long attemptId, Long assignmentId, Long studentId) {
         TestAttemptEntity attempt = validateAndGetAttempt(testId, attemptId, studentId);
         validateAttemptInProgress(attempt);
 
@@ -308,15 +322,31 @@ public class AnswerSubmissionService {
                 .orElseThrow(() -> new IllegalArgumentException(
                         "No saved code for this assignment yet. Save your code first."));
 
-        try {
-            // Preview: runs only public test cases, returns transient results.
-            // Final grading on all test cases happens at test submission via autoGradeAllAnswers.
-            return codeExecutionService.runPreview(submission);
-        } catch (Exception e) {
-            log.error("Code preview failed for submission {} (attempt {}, assignment {}): {}",
-                    submission.getId(), attemptId, assignmentId, e.getMessage(), e);
-            throw new IllegalStateException("Wykonanie kodu nie powiodło się: " + e.getMessage(), e);
+        Long submissionId = submission.getId();
+        runJobRegistry.markPending(submissionId);
+        asyncCodeRunService.executeAsync(submissionId);
+
+        return runJobRegistry.getStatus(submissionId);
+    }
+
+    /**
+     * Polled by the frontend after triggering {@link #runCode}.
+     * Returns the current state of the most recent preview job for this submission.
+     */
+    @Transactional(readOnly = true)
+    public RunStatusDto getRunStatus(Long testId, Long attemptId, Long assignmentId, Long studentId) {
+        TestAttemptEntity attempt = validateAndGetAttempt(testId, attemptId, studentId);
+        AssignmentEntity assignment = validateAndGetAssignment(testId, assignmentId);
+
+        if (assignment.getType() != AssignmentType.CODING) {
+            throw new IllegalArgumentException("getRunStatus is only valid for CODING assignments");
         }
+
+        CodeSubmissionEntity submission = codeSubmissionRepository
+                .findByTestAttemptIdAndAssignmentId(attemptId, assignmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Submission not found"));
+
+        return runJobRegistry.getStatus(submission.getId());
     }
 
     private AnswerDto mapAnswerToDto(AssignmentAnswerEntity answer) {
