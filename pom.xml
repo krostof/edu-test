@@ -98,6 +98,39 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <!-- JaCoCo: code coverage. Per-module reports at target/site/jacoco/index.html.
+                 Aggregate via `mvn verify` from the root. -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <excludes>
+                        <!-- DTOs, entities (Lombok-generated), generated OpenAPI models -->
+                        <exclude>com/edutest/api/model/**</exclude>
+                        <exclude>com/edutest/dto/**</exclude>
+                        <exclude>com/edutest/persistance/entity/**</exclude>
+                        <exclude>**/*Application.class</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 
 </project>

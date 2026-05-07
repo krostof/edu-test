@@ -13,6 +13,11 @@ spring:
   # and the V1 baseline placeholder is empty (would fail on V2 ALTER otherwise).
   flyway:
     enabled: false
+
+# Disable rate limiting in tests — they fire many requests per user
+app:
+  rate-limit:
+    enabled: false
   h2:
     console:
       enabled: false

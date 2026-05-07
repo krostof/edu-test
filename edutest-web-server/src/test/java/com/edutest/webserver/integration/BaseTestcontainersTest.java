@@ -46,6 +46,8 @@ public abstract class BaseTestcontainersTest {
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
         // Disable Flyway in integration tests — Hibernate handles schema, V1 baseline is empty.
         registry.add("spring.flyway.enabled", () -> "false");
+        // Disable rate limiting — tests fire many requests per user
+        registry.add("app.rate-limit.enabled", () -> "false");
         registry.add("app.jwtSecret", () -> "testSecretKeyForJwtTokenGenerationInTestsWithAtLeast256Bits1234567890");
         registry.add("app.jwtExpirationMs", () -> "86400000");
         registry.add("app.refreshTokenExpirationMs", () -> "604800000");
