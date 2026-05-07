@@ -11,6 +11,7 @@ import com.edutest.commons.security.JwtTokenProvider;
 import com.edutest.persistance.entity.auth.RefreshTokenEntity;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.repository.UserRepository;
+import com.edutest.service.auth.PasswordResetService;
 import com.edutest.service.auth.RefreshTokenService;
 import com.edutest.service.security.LoginAndRegisterFacade;
 import com.edutest.service.security.UserProfileMapper;
@@ -44,6 +45,7 @@ public class AuthController implements AuthenticationApi {
     private final UserProfileMapper userProfileMapper;
     private final RefreshTokenService refreshTokenService;
     private final UserMapper userMapper;
+    private final PasswordResetService passwordResetService;
 
     @Value("${app.jwtExpirationMs:86400000}")
     private long jwtExpirationMs;
@@ -55,7 +57,8 @@ public class AuthController implements AuthenticationApi {
             UserRepository userRepository,
             @Qualifier("securityUserProfileMapper") UserProfileMapper userProfileMapper,
             RefreshTokenService refreshTokenService,
-            UserMapper userMapper) {
+            UserMapper userMapper,
+            PasswordResetService passwordResetService) {
         this.authenticationManager = authenticationManager;
         this.tokenProvider = tokenProvider;
         this.loginAndRegisterFacade = loginAndRegisterFacade;
@@ -63,6 +66,7 @@ public class AuthController implements AuthenticationApi {
         this.userProfileMapper = userProfileMapper;
         this.refreshTokenService = refreshTokenService;
         this.userMapper = userMapper;
+        this.passwordResetService = passwordResetService;
     }
 
     @Override
@@ -160,6 +164,30 @@ public class AuthController implements AuthenticationApi {
         }
     }
 
+    @PostMapping("/auth/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        // Always returns 200 to prevent enumeration of registered emails.
+        passwordResetService.requestReset(request.getEmail());
+        return ResponseEntity.ok(new MessageResponse(
+                "Jeśli podany adres jest zarejestrowany, wysłaliśmy link do resetu hasła."));
+    }
+
+    @GetMapping("/auth/reset-password/validate")
+    public ResponseEntity<?> validateResetToken(@RequestParam String token) {
+        boolean valid = passwordResetService.isTokenValid(token);
+        return ResponseEntity.ok(new TokenValidationResponse(valid));
+    }
+
+    @PostMapping("/auth/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        try {
+            passwordResetService.completeReset(request.getToken(), request.getNewPassword());
+            return ResponseEntity.ok(new MessageResponse("Hasło zostało zmienione."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+
     @PostMapping("/auth/logout")
     public ResponseEntity<?> logout(@RequestBody(required = false) RefreshTokenRequest request) {
         if (request != null && request.getRefreshToken() != null) {
@@ -225,6 +253,34 @@ public class AuthController implements AuthenticationApi {
         public RegisterResponse(String message, UserProfile user) {
             this.message = message;
             this.user = user;
+        }
+    }
+
+    @Data
+    public static class ForgotPasswordRequest {
+        @NotBlank
+        @Email
+        @Size(max = 100)
+        private String email;
+    }
+
+    @Data
+    public static class ResetPasswordRequest {
+        @NotBlank
+        @Size(min = 32, max = 80)
+        private String token;
+
+        @NotBlank
+        @Size(min = 6, max = 100)
+        private String newPassword;
+    }
+
+    @Data
+    public static class TokenValidationResponse {
+        private boolean valid;
+
+        public TokenValidationResponse(boolean valid) {
+            this.valid = valid;
         }
     }
 }
