@@ -63,6 +63,9 @@ public class CodeSubmissionEntity extends BaseEntity {
     @Column(name = "max_memory_used_mb")
     private Integer maxMemoryUsedMb;
 
+    @Column(name = "teacher_feedback", length = 2000)
+    private String teacherFeedback;
+
     @OneToMany(mappedBy = "submission", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @Builder.Default
     private List<TestCaseResultEntity> testCaseResults = new ArrayList<>();

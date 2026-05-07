@@ -3,6 +3,8 @@ package com.edutest.service.teacher;
 import com.edutest.dto.AnswerReviewDto;
 import com.edutest.dto.ChoiceOptionDto;
 import com.edutest.dto.GradeAnswerRequestDto;
+import com.edutest.dto.TestCaseResultDto;
+import com.edutest.persistance.entity.test.TestCaseResultEntity;
 import com.edutest.persistance.entity.assigment.AssignmentEntity;
 import com.edutest.persistance.entity.assigment.AssignmentType;
 import com.edutest.persistance.entity.assigment.common.AssignmentAnswerEntity;
@@ -102,6 +104,7 @@ public class OpenQuestionGradingService {
                     .orElseThrow(() -> new IllegalArgumentException("Code submission not found"));
 
             submission.setTotalScore(request.getScore());
+            submission.setTeacherFeedback(request.getFeedback());
             codeSubmissionRepository.save(submission);
 
             recalculateAttemptScore(attempt);
@@ -233,17 +236,52 @@ public class OpenQuestionGradingService {
                 .studentName(student.getFirstName() + " " + student.getLastName());
 
         if (submission != null) {
+            List<TestCaseResultEntity> results = submission.getTestCaseResults() != null
+                    ? submission.getTestCaseResults() : List.of();
+            List<TestCaseResultDto> resultDtos = results.stream()
+                    .map(OpenQuestionGradingService::mapTestCaseResultForTeacher)
+                    .collect(Collectors.toList());
+            int passed = (int) results.stream()
+                    .filter(r -> Boolean.TRUE.equals(r.getPassed()))
+                    .count();
+
             builder.answerId(submission.getId())
                     .answeredAt(submission.getSubmittedAt())
                     .sourceCode(submission.getSourceCode())
                     .programmingLanguage(submission.getProgrammingLanguage())
+                    .compilationStatus(submission.getCompilationStatus() != null
+                            ? submission.getCompilationStatus().name() : null)
+                    .compilationError(submission.getCompilationError())
+                    .executionStatus(submission.getExecutionStatus() != null
+                            ? submission.getExecutionStatus().name() : null)
+                    .testCaseResults(resultDtos)
+                    .testCasesPassed(passed)
+                    .testCasesTotal(results.size())
                     .score(submission.getTotalScore())
-                    .isGraded(submission.getTotalScore() != null);
+                    .isGraded(submission.getTotalScore() != null)
+                    .teacherFeedback(submission.getTeacherFeedback());
         } else {
             builder.isGraded(false);
         }
 
         return builder.build();
+    }
+
+    private static TestCaseResultDto mapTestCaseResultForTeacher(TestCaseResultEntity result) {
+        boolean isPublic = result.getTestCase() != null
+                && Boolean.TRUE.equals(result.getTestCase().getIsPublic());
+        return TestCaseResultDto.builder()
+                .testCaseId(result.getTestCase() != null ? result.getTestCase().getId() : null)
+                .isPublic(isPublic)
+                .description(result.getTestCase() != null ? result.getTestCase().getDescription() : null)
+                .inputData(result.getTestCase() != null ? result.getTestCase().getInputData() : null)
+                .expectedOutput(result.getTestCase() != null ? result.getTestCase().getExpectedOutput() : null)
+                .actualOutput(result.getActualOutput())
+                .passed(result.getPassed())
+                .executionTimeMs(result.getExecutionTimeMs())
+                .memoryUsedMb(result.getMemoryUsedMb())
+                .errorMessage(result.getErrorMessage())
+                .build();
     }
 
     private List<ChoiceOptionDto> mapOptions(List<ChoiceOptionEntity> options) {

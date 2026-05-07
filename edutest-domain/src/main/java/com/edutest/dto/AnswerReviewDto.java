@@ -26,6 +26,12 @@ public class AnswerReviewDto {
     private List<Long> selectedOptionIds;
     private String sourceCode;
     private String programmingLanguage;
+    private String compilationStatus;
+    private String compilationError;
+    private String executionStatus;
+    private List<TestCaseResultDto> testCaseResults;
+    private Integer testCasesPassed;
+    private Integer testCasesTotal;
 
     // For choice questions
     private List<Long> correctOptionIds;

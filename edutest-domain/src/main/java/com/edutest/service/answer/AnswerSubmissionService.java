@@ -293,7 +293,7 @@ public class AnswerSubmissionService {
         return codeSubmissionRepository.save(submission);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public AnswerDto runCode(Long testId, Long attemptId, Long assignmentId, Long studentId) {
         TestAttemptEntity attempt = validateAndGetAttempt(testId, attemptId, studentId);
         validateAttemptInProgress(attempt);
@@ -309,14 +309,14 @@ public class AnswerSubmissionService {
                         "No saved code for this assignment yet. Save your code first."));
 
         try {
-            codeExecutionService.executeAndPersist(submission);
+            // Preview: runs only public test cases, returns transient results.
+            // Final grading on all test cases happens at test submission via autoGradeAllAnswers.
+            return codeExecutionService.runPreview(submission);
         } catch (Exception e) {
-            log.error("Code execution failed for submission {} (attempt {}, assignment {}): {}",
+            log.error("Code preview failed for submission {} (attempt {}, assignment {}): {}",
                     submission.getId(), attemptId, assignmentId, e.getMessage(), e);
+            throw new IllegalStateException("Wykonanie kodu nie powiodło się: " + e.getMessage(), e);
         }
-
-        CodeSubmissionEntity saved = codeSubmissionRepository.save(submission);
-        return mapCodeSubmissionToDto(saved);
     }
 
     private AnswerDto mapAnswerToDto(AssignmentAnswerEntity answer) {
@@ -371,6 +371,7 @@ public class AnswerSubmissionService {
                 .testCasesTotal(total)
                 .score(submission.getTotalScore())
                 .isGraded(submission.getTotalScore() != null)
+                .teacherFeedback(submission.getTeacherFeedback())
                 .build();
     }
 
