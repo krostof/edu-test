@@ -15,9 +15,12 @@ import com.edutest.dto.TestSubmissionResultDto;
 import com.edutest.persistance.entity.test.TestAttemptEntity;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.entity.user.UserEntityRole;
+import com.edutest.dto.AttemptIncidentDto;
+import com.edutest.dto.RecordIncidentRequestDto;
 import com.edutest.service.TestAttemptService;
 import com.edutest.service.attempt.TestAttemptManagementService;
 import com.edutest.service.answer.AnswerSubmissionService;
+import com.edutest.service.incident.AttemptIncidentService;
 import com.edutest.service.answer.TestResultsService;
 import com.edutest.service.answer.TestSubmissionService;
 import com.edutest.service.teacher.OpenQuestionGradingService;
@@ -69,6 +72,7 @@ public class TestApiController implements TestsApi {
     private final TestResultsExportService exportService;
     private final TeacherMapper teacherMapper;
     private final TestAttemptStateService attemptStateService;
+    private final AttemptIncidentService incidentService;
 
     @Override
     @PreAuthorize("hasRole('TEACHER')")
@@ -248,6 +252,25 @@ public class TestApiController implements TestsApi {
                 testId, attemptId, assignmentId, currentUser.getId(), requestDto);
 
         return ResponseEntity.ok(answerMapper.toApiAnswerResponse(answerDto));
+    }
+
+    @PostMapping("/tests/{testId}/attempts/{attemptId}/incidents")
+    public ResponseEntity<Void> recordIncident(
+            @PathVariable Long testId,
+            @PathVariable Long attemptId,
+            @RequestBody RecordIncidentRequestDto request) {
+        UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
+        // fire-and-forget from frontend's perspective; we still validate ownership
+        incidentService.recordIncident(testId, attemptId, currentUser.getId(), request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/tests/{testId}/attempts/{attemptId}/incidents")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    public ResponseEntity<List<AttemptIncidentDto>> listIncidents(
+            @PathVariable Long testId,
+            @PathVariable Long attemptId) {
+        return ResponseEntity.ok(incidentService.listIncidents(testId, attemptId));
     }
 
     @PostMapping("/tests/{testId}/attempts/{attemptId}/answers/{assignmentId}/run")

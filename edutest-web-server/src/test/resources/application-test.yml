@@ -9,6 +9,10 @@ spring:
       ddl-auto: create-drop
     database-platform: org.hibernate.dialect.H2Dialect
     show-sql: false
+  # Disable Flyway in tests — Hibernate create-drop handles schema for H2,
+  # and the V1 baseline placeholder is empty (would fail on V2 ALTER otherwise).
+  flyway:
+    enabled: false
   h2:
     console:
       enabled: false
