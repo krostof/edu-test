@@ -1,0 +1,28 @@
+-- ============================================================================
+-- V1 - Baseline of existing schema
+-- ============================================================================
+--
+-- This is a PLACEHOLDER baseline. The current schema was managed by Hibernate
+-- with `ddl-auto=update` and is NOT captured here.
+--
+-- For existing dev databases:
+--   With `spring.flyway.baseline-on-migrate=true` (set in application.properties),
+--   Flyway will mark this V1 as baseline on first run WITHOUT executing it,
+--   then run V2+ on top of the existing schema. So no action needed for dev.
+--
+-- For fresh databases (CI, new dev setup, production deploy):
+--   This file must be replaced with the actual schema. Generate it from a
+--   working dev DB:
+--
+--     pg_dump --schema-only --no-owner --no-privileges \
+--             -h localhost -U edutest edutest > V1__baseline.sql
+--
+--   Then prepend a comment header and remove any pg_dump-specific commands
+--   (SET statements, OWNER TO, etc.) that Flyway can't replay cleanly.
+--
+-- Until that's done, fresh DBs need `ddl-auto=update` to bootstrap the schema
+-- (current setting). Once V1 is populated, switch to `ddl-auto=validate`.
+-- ============================================================================
+
+-- Intentionally empty. See header for instructions.
+SELECT 1;
