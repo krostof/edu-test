@@ -39,6 +39,7 @@ public class LanguageRunnerRegistry {
             case "c++", "cplusplus" -> "cpp";
             case "js", "node", "nodejs" -> "javascript";
             case "py", "python3" -> "python";
+            case "c#", "cs" -> "csharp";
             default -> trimmed;
         };
     }

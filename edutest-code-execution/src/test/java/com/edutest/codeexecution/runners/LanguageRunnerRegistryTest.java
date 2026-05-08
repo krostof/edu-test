@@ -20,7 +20,8 @@ class LanguageRunnerRegistryTest {
                 new PythonRunner(),
                 new JavascriptRunner(),
                 new CppRunner(),
-                new CRunner()
+                new CRunner(),
+                new CSharpRunner()
         ));
     }
 
@@ -32,6 +33,7 @@ class LanguageRunnerRegistryTest {
         assertThat(registry.resolve("javascript")).isInstanceOf(JavascriptRunner.class);
         assertThat(registry.resolve("cpp")).isInstanceOf(CppRunner.class);
         assertThat(registry.resolve("c")).isInstanceOf(CRunner.class);
+        assertThat(registry.resolve("csharp")).isInstanceOf(CSharpRunner.class);
     }
 
     @Test
@@ -52,6 +54,8 @@ class LanguageRunnerRegistryTest {
         assertThat(registry.resolve("js")).isInstanceOf(JavascriptRunner.class);
         assertThat(registry.resolve("node")).isInstanceOf(JavascriptRunner.class);
         assertThat(registry.resolve("nodejs")).isInstanceOf(JavascriptRunner.class);
+        assertThat(registry.resolve("C#")).isInstanceOf(CSharpRunner.class);
+        assertThat(registry.resolve("cs")).isInstanceOf(CSharpRunner.class);
     }
 
     @Test

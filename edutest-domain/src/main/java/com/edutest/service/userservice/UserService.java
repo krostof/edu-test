@@ -62,27 +62,11 @@ public class UserService {
     }
 
     public void unlockUserAccount(Long userId) {
-        // TODO: Implement account unlocking logic
         userRepository.findById(userId).ifPresent(user -> {
             user.setIsActive(true);
             userRepository.save(user);
             log.info("User account with ID {} has been unlocked.", userId);
         });
-    }
-
-    public void initiatePasswordReset(String email) {
-        // TODO: Implement password reset initiation
-        throw new UnsupportedOperationException("Not implemented yet");
-    }
-
-    public void resetPassword(String token, String newPassword) {
-        // TODO: Implement password reset with token
-        throw new UnsupportedOperationException("Not implemented yet");
-    }
-
-    public void activateUserAccount(String activationToken) {
-        // TODO: Implement account activation
-        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     // Business Rules for Users
@@ -225,14 +209,6 @@ public class UserService {
             return 0;
         }
         return (int) testRepository.countByCreatedBy(user);
-    }
-
-    @Transactional(readOnly = true)
-    public int getUserAttemptCount(Long userId) {
-        // This would require TestAttemptJpaRepository, for now return 0
-        // TODO: Inject TestAttemptJpaRepository when needed
-        log.warn("getUserAttemptCount not fully implemented - requires TestAttemptJpaRepository");
-        return 0;
     }
 
     // Search & Filtering Logic

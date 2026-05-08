@@ -64,4 +64,17 @@ class RunnersTest {
         assertThat(cmd.getCompileCmd()).containsExactly("gcc", "-O2", "-o", "/tmp/sol", "/workspace/main.c");
         assertThat(cmd.getRunCmd()).containsExactly("/tmp/sol");
     }
+
+    @Test
+    @DisplayName("C#: mcs compile via Mono, mono runs /tmp/sol.exe")
+    void csharpRunner() {
+        RunCommand cmd = new CSharpRunner().buildRunCommand(256);
+
+        assertThat(cmd.getImage()).isEqualTo("mono:6.12-slim");
+        assertThat(cmd.getSourceFilename()).isEqualTo("Main.cs");
+        assertThat(cmd.requiresCompilation()).isTrue();
+        assertThat(cmd.getCompileCmd()).containsExactly(
+                "mcs", "-optimize", "-out:/tmp/sol.exe", "/workspace/Main.cs");
+        assertThat(cmd.getRunCmd()).containsExactly("mono", "/tmp/sol.exe");
+    }
 }
