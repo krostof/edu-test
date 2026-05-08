@@ -2,7 +2,7 @@ package com.edutest.service.teacher;
 
 import com.edutest.dto.AnswerReviewDto;
 import com.edutest.dto.GradeAnswerRequestDto;
-import com.edutest.event.TestAttemptGradedEvent;
+import com.edutest.event.AnswerGradedEvent;
 import com.edutest.persistance.entity.assigment.AssignmentType;
 import com.edutest.persistance.entity.assigment.coding.CodingAssignmentEntity;
 import com.edutest.persistance.entity.code.CodeSubmissionEntity;
@@ -128,24 +128,14 @@ class ManualGradingServiceCodingTest {
     }
 
     @Test
-    @DisplayName("Publishes TestAttemptGradedEvent when grading the LAST pending answer of a finished attempt")
-    void publishesEventWhenAttemptBecomesFullyGraded() {
-        attempt.setIsCompleted(true);
-        attempt.setScore(7.5f);
-
+    @DisplayName("Publishes primitive AnswerGradedEvent on every successful grade — fully-graded detection lives in tracker")
+    void publishesPrimitiveEventOnEveryGrade() {
         when(testAttemptRepository.findByIdWithTestAndStudent(10L)).thenReturn(Optional.of(attempt));
         when(assignmentRepository.findById(5L)).thenReturn(Optional.of(assignment));
         when(codeSubmissionRepository.findByTestAttemptIdAndAssignmentId(10L, 5L))
                 .thenReturn(Optional.of(submission));
         when(answerRepository.sumScoresByTestAttemptId(10L)).thenReturn(0f);
         when(codeSubmissionRepository.sumScoresByTestAttemptId(10L)).thenReturn(7.5f);
-
-        // Simulate "everything graded after this call":
-        when(answerRepository.countUngradedByTestAttemptId(10L)).thenReturn(0L);
-        // submission has totalScore != null after grading (set by service)
-        when(codeSubmissionRepository.findByTestAttemptId(10L)).thenReturn(java.util.List.of(submission));
-
-        when(assignmentRepository.sumPointsByTestId(1L)).thenReturn(10f);
 
         GradeAnswerRequestDto request = GradeAnswerRequestDto.builder()
                 .score(7.5f)
@@ -154,52 +144,13 @@ class ManualGradingServiceCodingTest {
 
         service.gradeAnswer(1L, 10L, 5L, request);
 
-        ArgumentCaptor<TestAttemptGradedEvent> captor = ArgumentCaptor.forClass(TestAttemptGradedEvent.class);
+        ArgumentCaptor<AnswerGradedEvent> captor = ArgumentCaptor.forClass(AnswerGradedEvent.class);
         verify(eventPublisher).publishEvent(captor.capture());
-        TestAttemptGradedEvent event = captor.getValue();
+        AnswerGradedEvent event = captor.getValue();
         assertThat(event.attemptId()).isEqualTo(10L);
         assertThat(event.testId()).isEqualTo(1L);
         assertThat(event.studentId()).isEqualTo(100L);
-        assertThat(event.totalScore()).isEqualTo(7.5f);
-        assertThat(event.maxScore()).isEqualTo(10f);
-    }
-
-    @Test
-    @DisplayName("Does NOT publish event when other answers are still ungraded (avoid email spam)")
-    void noEventWhilePendingAnswersExist() {
-        attempt.setIsCompleted(true);
-
-        when(testAttemptRepository.findByIdWithTestAndStudent(10L)).thenReturn(Optional.of(attempt));
-        when(assignmentRepository.findById(5L)).thenReturn(Optional.of(assignment));
-        when(codeSubmissionRepository.findByTestAttemptIdAndAssignmentId(10L, 5L))
-                .thenReturn(Optional.of(submission));
-        when(answerRepository.sumScoresByTestAttemptId(10L)).thenReturn(0f);
-        when(codeSubmissionRepository.sumScoresByTestAttemptId(10L)).thenReturn(5f);
-        // Still has pending OPEN_QUESTION etc.
-        when(answerRepository.countUngradedByTestAttemptId(10L)).thenReturn(1L);
-
-        GradeAnswerRequestDto request = GradeAnswerRequestDto.builder().score(5f).build();
-        service.gradeAnswer(1L, 10L, 5L, request);
-
-        verify(eventPublisher, never()).publishEvent(any());
-    }
-
-    @Test
-    @DisplayName("Does NOT publish event for an unfinished attempt (student hasn't submitted yet)")
-    void noEventBeforeStudentSubmits() {
-        attempt.setIsCompleted(false);
-
-        when(testAttemptRepository.findByIdWithTestAndStudent(10L)).thenReturn(Optional.of(attempt));
-        when(assignmentRepository.findById(5L)).thenReturn(Optional.of(assignment));
-        when(codeSubmissionRepository.findByTestAttemptIdAndAssignmentId(10L, 5L))
-                .thenReturn(Optional.of(submission));
-        when(answerRepository.sumScoresByTestAttemptId(10L)).thenReturn(0f);
-        when(codeSubmissionRepository.sumScoresByTestAttemptId(10L)).thenReturn(5f);
-
-        GradeAnswerRequestDto request = GradeAnswerRequestDto.builder().score(5f).build();
-        service.gradeAnswer(1L, 10L, 5L, request);
-
-        verify(eventPublisher, never()).publishEvent(any());
+        assertThat(event.assignmentId()).isEqualTo(5L);
     }
 
     @Test

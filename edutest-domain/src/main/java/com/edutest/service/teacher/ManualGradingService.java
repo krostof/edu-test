@@ -4,7 +4,7 @@ import com.edutest.dto.AnswerReviewDto;
 import com.edutest.dto.ChoiceOptionDto;
 import com.edutest.dto.GradeAnswerRequestDto;
 import com.edutest.dto.TestCaseResultDto;
-import com.edutest.event.TestAttemptGradedEvent;
+import com.edutest.event.AnswerGradedEvent;
 import com.edutest.persistance.entity.test.TestCaseResultEntity;
 import com.edutest.persistance.entity.assigment.AssignmentEntity;
 import com.edutest.persistance.entity.assigment.AssignmentType;
@@ -42,9 +42,9 @@ import java.util.stream.Collectors;
  *
  * Auto-grading at test submission lives in {@code TestSubmissionService.autoGradeAllAnswers}.
  *
- * Publishes {@link com.edutest.event.TestAttemptGradedEvent} when grading the last
- * pending answer transitions the attempt to fully-graded — so listeners (email
- * notification, audit log) can react. Single email per attempt, never per answer.
+ * Publishes {@link com.edutest.event.AnswerGradedEvent} after every successful grade.
+ * This is a primitive fact ("this answer was graded") — derived events like
+ * "attempt fully graded" come from {@code AttemptGradingStateTracker}.
  */
 @Service
 @RequiredArgsConstructor
@@ -129,7 +129,7 @@ public class ManualGradingService {
 
             recalculateAttemptScore(attempt);
 
-            maybePublishAttemptGradedEvent(attempt);
+            publishAnswerGraded(attempt, assignment);
 
             return buildCodingReviewDto(assignment, attempt, attempt.getStudent(), submission);
         } else {
@@ -142,45 +142,23 @@ public class ManualGradingService {
 
             recalculateAttemptScore(attempt);
 
-            maybePublishAttemptGradedEvent(attempt);
+            publishAnswerGraded(attempt, assignment);
 
             return buildAnswerReviewDto(assignment, attempt, attempt.getStudent(), answer);
         }
     }
 
     /**
-     * Publish "attempt fully graded" only when this grade was the last one needed.
-     * Avoids spamming the student with one email per pending answer the teacher works through.
-     *
-     * Conditions:
-     *  - Attempt is finished (student already submitted) — we don't notify mid-test
-     *  - All non-code answers are graded (no isGraded=false rows)
-     *  - All code submissions have totalScore != null
+     * Primitive fact: this answer was just graded. We don't track whether the attempt
+     * is now fully graded — that's {@code AttemptGradingStateTracker}'s job.
      */
-    private void maybePublishAttemptGradedEvent(TestAttemptEntity attempt) {
-        if (!Boolean.TRUE.equals(attempt.getIsCompleted())) {
-            return;
-        }
-        if (!isAttemptFullyGraded(attempt.getId())) {
-            return;
-        }
-        Float maxScore = assignmentRepository.sumPointsByTestId(attempt.getTestEntity().getId());
-        eventPublisher.publishEvent(new TestAttemptGradedEvent(
+    private void publishAnswerGraded(TestAttemptEntity attempt, AssignmentEntity assignment) {
+        eventPublisher.publishEvent(new AnswerGradedEvent(
                 attempt.getId(),
                 attempt.getTestEntity().getId(),
                 attempt.getStudent().getId(),
-                attempt.getScore(),
-                maxScore
+                assignment.getId()
         ));
-    }
-
-    private boolean isAttemptFullyGraded(Long attemptId) {
-        long ungradedAnswers = answerRepository.countUngradedByTestAttemptId(attemptId);
-        if (ungradedAnswers > 0) {
-            return false;
-        }
-        return codeSubmissionRepository.findByTestAttemptId(attemptId).stream()
-                .allMatch(s -> s.getTotalScore() != null);
     }
 
     private void recalculateAttemptScore(TestAttemptEntity attempt) {

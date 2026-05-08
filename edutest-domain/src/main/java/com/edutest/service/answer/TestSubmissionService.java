@@ -1,7 +1,7 @@
 package com.edutest.service.answer;
 
 import com.edutest.dto.TestSubmissionResultDto;
-import com.edutest.event.TestAttemptGradedEvent;
+import com.edutest.event.TestAttemptSubmittedEvent;
 import com.edutest.persistance.entity.assigment.AssignmentEntity;
 import com.edutest.persistance.entity.assigment.AssignmentType;
 import com.edutest.persistance.entity.assigment.common.AssignmentAnswerEntity;
@@ -61,19 +61,9 @@ public class TestSubmissionService {
         int gradedCount = countGradedAnswers(attemptId);
         int pendingGradingCount = countPendingGrading(attemptId, testId);
 
-        // Notify the student only if everything is already graded after submit
-        // (no OPEN_QUESTION blocking, all CODING successfully executed). Otherwise
-        // the email goes out later from ManualGradingService when the teacher
-        // finishes manual grading of the last pending answer.
-        if (pendingGradingCount == 0 && allCodeSubmissionsScored(attemptId)) {
-            eventPublisher.publishEvent(new TestAttemptGradedEvent(
-                    attemptId,
-                    testId,
-                    studentId,
-                    totalScore,
-                    maxPossibleScore != null ? maxPossibleScore : 0f
-            ));
-        }
+        // Publish primitive fact: student submitted. AttemptGradingStateTracker decides
+        // whether the attempt is now fully graded (and whether to fire derived events).
+        eventPublisher.publishEvent(new TestAttemptSubmittedEvent(attemptId, testId, studentId));
 
         return TestSubmissionResultDto.create(
                 attemptId,
@@ -128,16 +118,6 @@ public class TestSubmissionService {
         }
 
         return total;
-    }
-
-    /**
-     * True iff every code submission in the attempt has a non-null totalScore.
-     * Used as a guard before firing TestAttemptGradedEvent — a CODING with SYSTEM_ERROR
-     * still has totalScore=null and must wait for teacher to grade manually.
-     */
-    private boolean allCodeSubmissionsScored(Long attemptId) {
-        return codeSubmissionRepository.findByTestAttemptId(attemptId).stream()
-                .allMatch(s -> s.getTotalScore() != null);
     }
 
     private int countGradedAnswers(Long attemptId) {
