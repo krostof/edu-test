@@ -23,7 +23,7 @@ import com.edutest.service.answer.AnswerSubmissionService;
 import com.edutest.service.incident.AttemptIncidentService;
 import com.edutest.service.answer.TestResultsService;
 import com.edutest.service.answer.TestSubmissionService;
-import com.edutest.service.teacher.OpenQuestionGradingService;
+import com.edutest.service.teacher.ManualGradingService;
 import com.edutest.service.teacher.TeacherAttemptService;
 import com.edutest.service.teacher.TestResultsExportService;
 import com.edutest.service.testservice.TestService;
@@ -71,7 +71,7 @@ public class TestApiController implements TestsApi {
     private final TestResultsService testResultsService;
     private final AnswerMapper answerMapper;
     private final TeacherAttemptService teacherAttemptService;
-    private final OpenQuestionGradingService gradingService;
+    private final ManualGradingService gradingService;
     private final TestResultsExportService exportService;
     private final TeacherMapper teacherMapper;
     private final TestAttemptStateService attemptStateService;

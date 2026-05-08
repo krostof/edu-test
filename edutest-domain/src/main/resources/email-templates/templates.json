@@ -1,0 +1,36 @@
+{
+  "templates": {
+    "test-assigned-to-group": {
+      "subject": "EduTest — przypisano nowy test: {{testTitle}}",
+      "body": [
+        "Cześć {{firstName}},",
+        "",
+        "Otrzymałeś nowy test do rozwiązania w EduTest:",
+        "",
+        "  Tytuł: {{testTitle}}",
+        "  Opis: {{testDescription}}",
+        "  Dostępny od: {{startDate}}",
+        "  Dostępny do: {{endDate}}",
+        "  Limit czasu: {{timeLimit}}",
+        "",
+        "Zaloguj się na platformę aby rozwiązać test.",
+        "",
+        "EduTest"
+      ]
+    },
+    "test-graded": {
+      "subject": "EduTest — Twój test został oceniony: {{testTitle}}",
+      "body": [
+        "Cześć {{firstName}},",
+        "",
+        "Twój test \"{{testTitle}}\" został w pełni oceniony.",
+        "",
+        "  Wynik: {{totalScore}} / {{maxScore}} pkt",
+        "",
+        "Zaloguj się na platformę aby zobaczyć szczegóły i komentarze nauczyciela.",
+        "",
+        "EduTest"
+      ]
+    }
+  }
+}

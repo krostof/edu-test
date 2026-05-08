@@ -4,6 +4,7 @@ import com.edutest.dto.AnswerReviewDto;
 import com.edutest.dto.ChoiceOptionDto;
 import com.edutest.dto.GradeAnswerRequestDto;
 import com.edutest.dto.TestCaseResultDto;
+import com.edutest.event.TestAttemptGradedEvent;
 import com.edutest.persistance.entity.test.TestCaseResultEntity;
 import com.edutest.persistance.entity.assigment.AssignmentEntity;
 import com.edutest.persistance.entity.assigment.AssignmentType;
@@ -20,6 +21,7 @@ import com.edutest.persistance.entity.test.TestAttemptEntity;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,15 +29,33 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Handles teacher's manual grading of student answers.
+ *
+ * Despite living in the {@code teacher} package, this covers all assignment types
+ * that need (or admit) manual review:
+ *  - {@code OPEN_QUESTION} — typically the only type that requires manual grading
+ *  - {@code CODING} — auto-scored at submit, but teacher can override the score and
+ *    add written feedback (e.g., "good logic, but ignored edge case for empty input")
+ *  - {@code SINGLE_CHOICE} / {@code MULTIPLE_CHOICE} — auto-graded; manual override
+ *    rare but supported (e.g., to compensate for a bad question)
+ *
+ * Auto-grading at test submission lives in {@code TestSubmissionService.autoGradeAllAnswers}.
+ *
+ * Publishes {@link com.edutest.event.TestAttemptGradedEvent} when grading the last
+ * pending answer transitions the attempt to fully-graded — so listeners (email
+ * notification, audit log) can react. Single email per attempt, never per answer.
+ */
 @Service
 @RequiredArgsConstructor
-public class OpenQuestionGradingService {
+public class ManualGradingService {
 
     private final TestAttemptJpaRepository testAttemptRepository;
     private final AssignmentJpaRepository assignmentRepository;
     private final AssignmentAnswerJpaRepository answerRepository;
     private final CodeSubmissionJpaRepository codeSubmissionRepository;
     private final ChoiceOptionJpaRepository choiceOptionRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public AnswerReviewDto getAnswerForReview(Long testId, Long attemptId, Long assignmentId) {
@@ -109,6 +129,8 @@ public class OpenQuestionGradingService {
 
             recalculateAttemptScore(attempt);
 
+            maybePublishAttemptGradedEvent(attempt);
+
             return buildCodingReviewDto(assignment, attempt, attempt.getStudent(), submission);
         } else {
             AssignmentAnswerEntity answer = answerRepository
@@ -120,8 +142,45 @@ public class OpenQuestionGradingService {
 
             recalculateAttemptScore(attempt);
 
+            maybePublishAttemptGradedEvent(attempt);
+
             return buildAnswerReviewDto(assignment, attempt, attempt.getStudent(), answer);
         }
+    }
+
+    /**
+     * Publish "attempt fully graded" only when this grade was the last one needed.
+     * Avoids spamming the student with one email per pending answer the teacher works through.
+     *
+     * Conditions:
+     *  - Attempt is finished (student already submitted) — we don't notify mid-test
+     *  - All non-code answers are graded (no isGraded=false rows)
+     *  - All code submissions have totalScore != null
+     */
+    private void maybePublishAttemptGradedEvent(TestAttemptEntity attempt) {
+        if (!Boolean.TRUE.equals(attempt.getIsCompleted())) {
+            return;
+        }
+        if (!isAttemptFullyGraded(attempt.getId())) {
+            return;
+        }
+        Float maxScore = assignmentRepository.sumPointsByTestId(attempt.getTestEntity().getId());
+        eventPublisher.publishEvent(new TestAttemptGradedEvent(
+                attempt.getId(),
+                attempt.getTestEntity().getId(),
+                attempt.getStudent().getId(),
+                attempt.getScore(),
+                maxScore
+        ));
+    }
+
+    private boolean isAttemptFullyGraded(Long attemptId) {
+        long ungradedAnswers = answerRepository.countUngradedByTestAttemptId(attemptId);
+        if (ungradedAnswers > 0) {
+            return false;
+        }
+        return codeSubmissionRepository.findByTestAttemptId(attemptId).stream()
+                .allMatch(s -> s.getTotalScore() != null);
     }
 
     private void recalculateAttemptScore(TestAttemptEntity attempt) {
@@ -239,7 +298,7 @@ public class OpenQuestionGradingService {
             List<TestCaseResultEntity> results = submission.getTestCaseResults() != null
                     ? submission.getTestCaseResults() : List.of();
             List<TestCaseResultDto> resultDtos = results.stream()
-                    .map(OpenQuestionGradingService::mapTestCaseResultForTeacher)
+                    .map(ManualGradingService::mapTestCaseResultForTeacher)
                     .collect(Collectors.toList());
             int passed = (int) results.stream()
                     .filter(r -> Boolean.TRUE.equals(r.getPassed()))

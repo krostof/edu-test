@@ -5,6 +5,7 @@ import com.edutest.domain.test.TestAttempt;
 import com.edutest.domain.user.User;
 import com.edutest.domain.group.StudentGroup;
 import com.edutest.dto.StudentTestDto;
+import com.edutest.event.TestAssignedToGroupEvent;
 import com.edutest.persistance.entity.group.StudentGroupEntity;
 import com.edutest.persistance.entity.test.TestAttemptEntity;
 import com.edutest.persistance.entity.test.TestEntity;
@@ -17,6 +18,7 @@ import com.edutest.util.TestMapper;
 import com.edutest.util.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,7 @@ public class TestService {
     private final StudentGroupJpaRepository studentGroupJpaRepository;
     private final UserMapper userMapper;
     private final TestMapper testMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     public Test createTest(String title, String description, LocalDateTime startDate,
                           LocalDateTime endDate, Integer timeLimit, Boolean allowNavigation,
@@ -337,6 +340,11 @@ public class TestService {
         TestEntity updatedEntity = testRepository.save(testEntity);
 
         log.info("Group {} assigned to test {} successfully", groupId, testId);
+
+        // Notify students after the assignment is committed.
+        // EmailNotificationListener picks this up @Async + @TransactionalEventListener.
+        eventPublisher.publishEvent(new TestAssignedToGroupEvent(testId, groupId));
+
         return testMapper.toDomain(updatedEntity);
     }
 

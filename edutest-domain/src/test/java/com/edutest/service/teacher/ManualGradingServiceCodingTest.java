@@ -2,6 +2,7 @@ package com.edutest.service.teacher;
 
 import com.edutest.dto.AnswerReviewDto;
 import com.edutest.dto.GradeAnswerRequestDto;
+import com.edutest.event.TestAttemptGradedEvent;
 import com.edutest.persistance.entity.assigment.AssignmentType;
 import com.edutest.persistance.entity.assigment.coding.CodingAssignmentEntity;
 import com.edutest.persistance.entity.code.CodeSubmissionEntity;
@@ -17,11 +18,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.ArrayList;
 import java.util.Optional;
@@ -34,21 +37,22 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Tests the CODING-specific path of {@link OpenQuestionGradingService#gradeAnswer}.
+ * Tests the CODING-specific path of {@link ManualGradingService#gradeAnswer}.
  * The non-CODING path is exercised by integration tests.
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class OpenQuestionGradingServiceCodingTest {
+class ManualGradingServiceCodingTest {
 
     @Mock private TestAttemptJpaRepository testAttemptRepository;
     @Mock private AssignmentJpaRepository assignmentRepository;
     @Mock private AssignmentAnswerJpaRepository answerRepository;
     @Mock private CodeSubmissionJpaRepository codeSubmissionRepository;
     @Mock private ChoiceOptionJpaRepository choiceOptionRepository;
+    @Mock private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
-    private OpenQuestionGradingService service;
+    private ManualGradingService service;
 
     private TestEntity testEntity;
     private TestAttemptEntity attempt;
@@ -121,6 +125,97 @@ class OpenQuestionGradingServiceCodingTest {
         assertThat(result.getTeacherFeedback())
                 .isEqualTo("Solid solution, but watch edge cases for empty input.");
         assertThat(result.getStudentName()).isEqualTo("Bob Builder");
+    }
+
+    @Test
+    @DisplayName("Publishes TestAttemptGradedEvent when grading the LAST pending answer of a finished attempt")
+    void publishesEventWhenAttemptBecomesFullyGraded() {
+        attempt.setIsCompleted(true);
+        attempt.setScore(7.5f);
+
+        when(testAttemptRepository.findByIdWithTestAndStudent(10L)).thenReturn(Optional.of(attempt));
+        when(assignmentRepository.findById(5L)).thenReturn(Optional.of(assignment));
+        when(codeSubmissionRepository.findByTestAttemptIdAndAssignmentId(10L, 5L))
+                .thenReturn(Optional.of(submission));
+        when(answerRepository.sumScoresByTestAttemptId(10L)).thenReturn(0f);
+        when(codeSubmissionRepository.sumScoresByTestAttemptId(10L)).thenReturn(7.5f);
+
+        // Simulate "everything graded after this call":
+        when(answerRepository.countUngradedByTestAttemptId(10L)).thenReturn(0L);
+        // submission has totalScore != null after grading (set by service)
+        when(codeSubmissionRepository.findByTestAttemptId(10L)).thenReturn(java.util.List.of(submission));
+
+        when(assignmentRepository.sumPointsByTestId(1L)).thenReturn(10f);
+
+        GradeAnswerRequestDto request = GradeAnswerRequestDto.builder()
+                .score(7.5f)
+                .feedback("good")
+                .build();
+
+        service.gradeAnswer(1L, 10L, 5L, request);
+
+        ArgumentCaptor<TestAttemptGradedEvent> captor = ArgumentCaptor.forClass(TestAttemptGradedEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        TestAttemptGradedEvent event = captor.getValue();
+        assertThat(event.attemptId()).isEqualTo(10L);
+        assertThat(event.testId()).isEqualTo(1L);
+        assertThat(event.studentId()).isEqualTo(100L);
+        assertThat(event.totalScore()).isEqualTo(7.5f);
+        assertThat(event.maxScore()).isEqualTo(10f);
+    }
+
+    @Test
+    @DisplayName("Does NOT publish event when other answers are still ungraded (avoid email spam)")
+    void noEventWhilePendingAnswersExist() {
+        attempt.setIsCompleted(true);
+
+        when(testAttemptRepository.findByIdWithTestAndStudent(10L)).thenReturn(Optional.of(attempt));
+        when(assignmentRepository.findById(5L)).thenReturn(Optional.of(assignment));
+        when(codeSubmissionRepository.findByTestAttemptIdAndAssignmentId(10L, 5L))
+                .thenReturn(Optional.of(submission));
+        when(answerRepository.sumScoresByTestAttemptId(10L)).thenReturn(0f);
+        when(codeSubmissionRepository.sumScoresByTestAttemptId(10L)).thenReturn(5f);
+        // Still has pending OPEN_QUESTION etc.
+        when(answerRepository.countUngradedByTestAttemptId(10L)).thenReturn(1L);
+
+        GradeAnswerRequestDto request = GradeAnswerRequestDto.builder().score(5f).build();
+        service.gradeAnswer(1L, 10L, 5L, request);
+
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("Does NOT publish event for an unfinished attempt (student hasn't submitted yet)")
+    void noEventBeforeStudentSubmits() {
+        attempt.setIsCompleted(false);
+
+        when(testAttemptRepository.findByIdWithTestAndStudent(10L)).thenReturn(Optional.of(attempt));
+        when(assignmentRepository.findById(5L)).thenReturn(Optional.of(assignment));
+        when(codeSubmissionRepository.findByTestAttemptIdAndAssignmentId(10L, 5L))
+                .thenReturn(Optional.of(submission));
+        when(answerRepository.sumScoresByTestAttemptId(10L)).thenReturn(0f);
+        when(codeSubmissionRepository.sumScoresByTestAttemptId(10L)).thenReturn(5f);
+
+        GradeAnswerRequestDto request = GradeAnswerRequestDto.builder().score(5f).build();
+        service.gradeAnswer(1L, 10L, 5L, request);
+
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("Does not publish event when grading fails validation")
+    void noEventOnValidationFailure() {
+        when(testAttemptRepository.findByIdWithTestAndStudent(10L)).thenReturn(Optional.of(attempt));
+        when(assignmentRepository.findById(5L)).thenReturn(Optional.of(assignment));
+
+        GradeAnswerRequestDto request = GradeAnswerRequestDto.builder()
+                .score(15f)
+                .feedback("over max")
+                .build();
+
+        assertThatThrownBy(() -> service.gradeAnswer(1L, 10L, 5L, request))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
