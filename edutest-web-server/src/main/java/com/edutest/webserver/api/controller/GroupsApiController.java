@@ -12,6 +12,7 @@ import com.edutest.util.UserMapper;
 import com.edutest.commons.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,7 +43,7 @@ public class GroupsApiController implements GroupsApi {
             Optional<StudentGroup> studentGroup = studentGroupService.findByStudent(currentUser.getId());
             groups = studentGroup.map(List::of).orElse(List.of());
         } else if (currentUser.isAdmin()) {
-            groups = studentGroupService.findAll(org.springframework.data.domain.Pageable.unpaged()).getContent();
+            groups = studentGroupService.findAll(Pageable.unpaged()).getContent();
         } else if (currentUser.isTeacher()) {
             groups = studentGroupService.findByTeacher(currentUser.getId());
         } else {

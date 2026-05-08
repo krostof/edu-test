@@ -13,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -80,7 +81,7 @@ public class StudentApiController implements StudentApi {
         return response;
     }
 
-    private OffsetDateTime toOffsetDateTime(java.time.LocalDateTime localDateTime) {
+    private OffsetDateTime toOffsetDateTime(LocalDateTime localDateTime) {
         if (localDateTime == null) return null;
         return localDateTime.atOffset(ZoneOffset.UTC);
     }

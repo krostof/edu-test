@@ -2,7 +2,6 @@ package com.edutest.webserver.api.controller;
 
 import com.edutest.api.TestsApi;
 import com.edutest.api.model.*;
-import com.edutest.domain.group.StudentGroup;
 import com.edutest.domain.user.User;
 import com.edutest.dto.AnswerDto;
 import com.edutest.dto.AnswerReviewDto;
@@ -39,6 +38,8 @@ import com.edutest.commons.SecurityContextHelper;
 import com.edutest.util.TestMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -46,6 +47,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -178,7 +180,7 @@ public class TestApiController implements TestsApi {
     @Override
     public ResponseEntity<List<TestGroupResponse>> getTestGroups(Long testId) {
         log.info("Getting groups for testId={}", testId);
-        List<StudentGroup> groups = testService.getTestGroups(testId);
+        List<com.edutest.domain.group.StudentGroup> groups = testService.getTestGroups(testId);
         List<TestGroupResponse> result = groups.stream()
                 .map(this::toTestGroupResponse)
                 .collect(Collectors.toList());
@@ -187,21 +189,22 @@ public class TestApiController implements TestsApi {
 
     @Override
     @PreAuthorize("hasRole('TEACHER')")
-    public ResponseEntity<List<com.edutest.api.model.StudentGroup>> getAvailableGroupsForTest(Long testId) {
+    public ResponseEntity<List<StudentGroup>> getAvailableGroupsForTest(Long testId) {
         UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
         log.info("Getting available groups for testId={}, teacherId={}", testId, currentUser.getId());
 
         // Get teacher's groups
-        List<StudentGroup> teacherGroups = studentGroupService.findByTeacher(currentUser.getId());
+        List<com.edutest.domain.group.StudentGroup> teacherGroups =
+                studentGroupService.findByTeacher(currentUser.getId());
 
         // Get groups already assigned to test
-        List<StudentGroup> assignedGroups = testService.getTestGroups(testId);
+        List<com.edutest.domain.group.StudentGroup> assignedGroups = testService.getTestGroups(testId);
         List<Long> assignedGroupIds = assignedGroups.stream()
-                .map(StudentGroup::getId)
+                .map(com.edutest.domain.group.StudentGroup::getId)
                 .toList();
 
         // Filter out already assigned groups
-        List<com.edutest.api.model.StudentGroup> availableGroups = teacherGroups.stream()
+        List<StudentGroup> availableGroups = teacherGroups.stream()
                 .filter(g -> !assignedGroupIds.contains(g.getId()))
                 .map(this::toApiStudentGroup)
                 .collect(Collectors.toList());
@@ -209,8 +212,8 @@ public class TestApiController implements TestsApi {
         return ResponseEntity.ok(availableGroups);
     }
 
-    private com.edutest.api.model.StudentGroup toApiStudentGroup(StudentGroup domain) {
-        com.edutest.api.model.StudentGroup api = new com.edutest.api.model.StudentGroup();
+    private StudentGroup toApiStudentGroup(com.edutest.domain.group.StudentGroup domain) {
+        StudentGroup api = new StudentGroup();
         api.setId(domain.getId());
         api.setName(domain.getName());
         api.setDescription(domain.getDescription());
@@ -233,7 +236,7 @@ public class TestApiController implements TestsApi {
         return ResponseEntity.noContent().build();
     }
 
-    private TestGroupResponse toTestGroupResponse(StudentGroup group) {
+    private TestGroupResponse toTestGroupResponse(com.edutest.domain.group.StudentGroup group) {
         TestGroupResponse resp = new TestGroupResponse();
         resp.setId(group.getId());
         resp.setName(group.getName());
@@ -458,14 +461,13 @@ public class TestApiController implements TestsApi {
 
     @Override
     @PreAuthorize("hasRole('TEACHER')")
-    public ResponseEntity<org.springframework.core.io.Resource> exportTestResults(Long testId, String format) {
+    public ResponseEntity<Resource> exportTestResults(Long testId, String format) {
         log.info("Exporting test results: testId={}, format={}", testId, format);
 
         String csvContent = exportService.exportToCsv(testId);
 
-        byte[] bytes = csvContent.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        org.springframework.core.io.ByteArrayResource resource =
-                new org.springframework.core.io.ByteArrayResource(bytes);
+        byte[] bytes = csvContent.getBytes(StandardCharsets.UTF_8);
+        ByteArrayResource resource = new ByteArrayResource(bytes);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"test_" + testId + "_results.csv\"")

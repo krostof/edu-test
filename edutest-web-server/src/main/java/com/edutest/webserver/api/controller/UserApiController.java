@@ -37,7 +37,7 @@ public class UserApiController implements UsersApi {
         log.info("Updating current user profile");
         UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
 
-        User updatedUser = userService.updateUserProfile(
+        userService.updateUserProfile(
                 currentUser.getId(),
                 request.getFirstName(),
                 request.getLastName(),

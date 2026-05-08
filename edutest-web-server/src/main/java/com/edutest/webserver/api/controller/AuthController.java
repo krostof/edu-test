@@ -10,6 +10,7 @@ import com.edutest.api.model.UserSecurity;
 import com.edutest.commons.security.JwtTokenProvider;
 import com.edutest.persistance.entity.auth.RefreshTokenEntity;
 import com.edutest.persistance.entity.user.UserEntity;
+import com.edutest.persistance.entity.user.UserEntityRole;
 import com.edutest.persistance.repository.UserRepository;
 import com.edutest.service.auth.PasswordResetService;
 import com.edutest.service.auth.RefreshTokenService;
@@ -196,14 +197,14 @@ public class AuthController implements AuthenticationApi {
         return ResponseEntity.ok(new MessageResponse("Logged out successfully"));
     }
 
-    private com.edutest.persistance.entity.user.UserEntityRole toUserEntityRole(UserRole userRole) {
+    private UserEntityRole toUserEntityRole(UserRole userRole) {
         if (userRole == null) {
-            return com.edutest.persistance.entity.user.UserEntityRole.STUDENT;
+            return UserEntityRole.STUDENT;
         }
         return switch (userRole) {
-            case STUDENT -> com.edutest.persistance.entity.user.UserEntityRole.STUDENT;
-            case TEACHER -> com.edutest.persistance.entity.user.UserEntityRole.TEACHER;
-            case ADMIN -> com.edutest.persistance.entity.user.UserEntityRole.ADMIN;
+            case STUDENT -> UserEntityRole.STUDENT;
+            case TEACHER -> UserEntityRole.TEACHER;
+            case ADMIN -> UserEntityRole.ADMIN;
         };
     }
 
