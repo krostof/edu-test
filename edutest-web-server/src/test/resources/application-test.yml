@@ -21,9 +21,7 @@ app:
   h2:
     console:
       enabled: false
-
-# JWT Configuration for tests
-app:
+  # JWT Configuration for tests
   jwtSecret: testSecretKeyForJwtTokenGenerationInTestsWithAtLeast256Bits1234567890
   jwtExpirationMs: 86400000
   refreshTokenExpirationMs: 604800000

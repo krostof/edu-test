@@ -7,6 +7,7 @@ import com.edutest.persistance.entity.user.UserEntityRole;
 import com.edutest.persistance.repository.UserRepository;
 import com.edutest.service.port.LoginGeneratorPort;
 import com.edutest.util.UserMapper;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -89,14 +90,14 @@ public class UserManagementService {
 
     public UserProfile getUserById(Long userId) {
         UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
         return userMapper.toUserProfile(user);
     }
 
     @Transactional
     public UserProfile updateUser(Long userId, UpdateUserRequest request) {
         UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             if (userRepository.existsByEmail(request.getEmail())) {
@@ -122,18 +123,10 @@ public class UserManagementService {
     }
 
     @Transactional
-    public void deleteUser(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new RuntimeException("User not found with id: " + userId);
-        }
-        userRepository.deleteById(userId);
-    }
-
-    @Transactional
     public UserProfile activateUser(Long userId) {
         log.info("Activating user with id: {}", userId);
         UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
         user.setIsActive(true);
         UserEntity savedUser = userRepository.save(user);
@@ -145,7 +138,7 @@ public class UserManagementService {
     public UserProfile deactivateUser(Long userId) {
         log.info("Deactivating user with id: {}", userId);
         UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
         user.setIsActive(false);
         UserEntity savedUser = userRepository.save(user);
@@ -158,7 +151,7 @@ public class UserManagementService {
         log.info("Attempting to delete user with id: {}", userId);
 
         UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
         if (user.getRole() == UserEntityRole.TEACHER) {
             long groupCount = userRepository.countGroupsByTeacherId(userId);

@@ -27,7 +27,6 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
 
             String createJson = """
                 {
-                    "username": "newstudent",
                     "email": "newstudent@test.com",
                     "password": "Password1!",
                     "firstName": "New",
@@ -41,7 +40,7 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(createJson))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.username").value("newstudent"))
+                    .andExpect(jsonPath("$.username").value("studentn"))
                     .andExpect(jsonPath("$.email").value("newstudent@test.com"))
                     .andExpect(jsonPath("$.firstName").value("New"))
                     .andExpect(jsonPath("$.lastName").value("Student"));
@@ -54,11 +53,11 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
 
             String createJson = """
                 {
-                    "username": "newstudent2",
                     "email": "newstudent2@test.com",
                     "password": "Password1!",
                     "firstName": "New",
-                    "lastName": "Student"
+                    "lastName": "Student",
+                    "studentNumber": "STU004"
                 }
                 """;
 
@@ -76,11 +75,11 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
 
             String createJson = """
                 {
-                    "username": "newstudent3",
                     "email": "newstudent3@test.com",
                     "password": "Password1!",
                     "firstName": "New",
-                    "lastName": "Student"
+                    "lastName": "Student",
+                    "studentNumber": "STU005"
                 }
                 """;
 
@@ -107,7 +106,8 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
                     "email": "newteacher@test.com",
                     "password": "Password1!",
                     "firstName": "New",
-                    "lastName": "Teacher"
+                    "lastName": "Teacher",
+                    "employeeId": "EMP001"
                 }
                 """;
 
@@ -131,7 +131,8 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
                     "email": "newteacher2@test.com",
                     "password": "Password1!",
                     "firstName": "New",
-                    "lastName": "Teacher"
+                    "lastName": "Teacher",
+                    "employeeId": "EMP002"
                 }
                 """;
 
@@ -226,13 +227,13 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("Should return 400 for non-existent user")
-        void shouldReturn400ForNonExistentUser() throws Exception {
+        @DisplayName("Should return 404 for non-existent user")
+        void shouldReturn404ForNonExistentUser() throws Exception {
             String token = loginAndGetToken(ADMIN_USERNAME);
 
             mockMvc.perform(get("/api/admin/users/99999")
                             .header("Authorization", "Bearer " + token))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isNotFound());
         }
     }
 
@@ -308,7 +309,7 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
             // Verify deleted
             mockMvc.perform(get("/api/admin/users/" + userToDelete.getId())
                             .header("Authorization", "Bearer " + token))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isNotFound());
         }
 
         @Test
@@ -331,7 +332,7 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
         void adminShouldDeactivateUser() throws Exception {
             String token = loginAndGetToken(ADMIN_USERNAME);
 
-            mockMvc.perform(post("/api/admin/users/" + studentUser.getId() + "/deactivate")
+            mockMvc.perform(patch("/api/admin/users/" + studentUser.getId() + "/deactivate")
                             .header("Authorization", "Bearer " + token))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.isActive").value(false));
@@ -343,12 +344,12 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
             // First deactivate
             String token = loginAndGetToken(ADMIN_USERNAME);
 
-            mockMvc.perform(post("/api/admin/users/" + studentUser.getId() + "/deactivate")
+            mockMvc.perform(patch("/api/admin/users/" + studentUser.getId() + "/deactivate")
                             .header("Authorization", "Bearer " + token))
                     .andExpect(status().isOk());
 
             // Then activate
-            mockMvc.perform(post("/api/admin/users/" + studentUser.getId() + "/activate")
+            mockMvc.perform(patch("/api/admin/users/" + studentUser.getId() + "/activate")
                             .header("Authorization", "Bearer " + token))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.isActive").value(true));
@@ -432,7 +433,7 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
                 }
                 """, user1.getId(), user2.getId());
 
-            mockMvc.perform(post("/api/admin/users/batch-delete")
+            mockMvc.perform(delete("/api/admin/users/batch-delete")
                             .header("Authorization", "Bearer " + token)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(batchJson))
