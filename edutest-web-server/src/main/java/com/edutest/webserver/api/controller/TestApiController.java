@@ -17,9 +17,12 @@ import com.edutest.persistance.entity.user.UserEntityRole;
 import com.edutest.dto.AttemptIncidentDto;
 import com.edutest.dto.RecordIncidentRequestDto;
 import com.edutest.dto.RunStatusDto;
+import com.edutest.dto.SubmitStatusDto;
 import com.edutest.service.TestAttemptService;
 import com.edutest.service.attempt.TestAttemptManagementService;
 import com.edutest.service.answer.AnswerSubmissionService;
+import com.edutest.service.answer.AsyncTestSubmissionService;
+import com.edutest.service.answer.SubmitJobRegistry;
 import com.edutest.service.incident.AttemptIncidentService;
 import com.edutest.service.answer.TestResultsService;
 import com.edutest.service.answer.TestSubmissionService;
@@ -68,6 +71,8 @@ public class TestApiController implements TestsApi {
     private final UserMapper userMapper;
     private final AnswerSubmissionService answerSubmissionService;
     private final TestSubmissionService testSubmissionService;
+    private final AsyncTestSubmissionService asyncTestSubmissionService;
+    private final SubmitJobRegistry submitJobRegistry;
     private final TestResultsService testResultsService;
     private final AnswerMapper answerMapper;
     private final TeacherAttemptService teacherAttemptService;
@@ -335,15 +340,28 @@ public class TestApiController implements TestsApi {
     }
 
     @Override
-    public ResponseEntity<TestSubmissionResult> submitTestAttempt(Long testId, Long attemptId) {
+    public ResponseEntity<SubmitStatus> submitTestAttempt(Long testId, Long attemptId) {
         UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
-        log.info("Submitting test attempt: testId={}, attemptId={}, studentId={}",
+        log.info("Triggering async submit: testId={}, attemptId={}, studentId={}",
                 testId, attemptId, currentUser.getId());
 
-        TestSubmissionResultDto resultDto = testSubmissionService.submitTestAttempt(
-                testId, attemptId, currentUser.getId());
+        // Pre-flight ownership/state check on the request thread, so 403/404/409
+        // come back as proper HTTP errors instead of being buried in the async job.
+        testSubmissionService.assertSubmittable(testId, attemptId, currentUser.getId());
 
-        return ResponseEntity.ok(answerMapper.toApiTestSubmissionResult(resultDto));
+        submitJobRegistry.markPending(attemptId);
+        asyncTestSubmissionService.executeAsync(testId, attemptId, currentUser.getId());
+
+        SubmitStatusDto status = submitJobRegistry.getStatus(attemptId);
+        return ResponseEntity.accepted().body(answerMapper.toApiSubmitStatus(status));
+    }
+
+    @Override
+    public ResponseEntity<SubmitStatus> getSubmitStatus(Long testId, Long attemptId) {
+        UserEntity currentUser = securityContextHelper.getCurrentUserEntity();
+        testSubmissionService.assertCanReadAttempt(testId, attemptId, currentUser.getId());
+        SubmitStatusDto status = submitJobRegistry.getStatus(attemptId);
+        return ResponseEntity.ok(answerMapper.toApiSubmitStatus(status));
     }
 
     @Override

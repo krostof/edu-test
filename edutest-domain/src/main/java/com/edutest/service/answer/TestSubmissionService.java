@@ -33,6 +33,43 @@ public class TestSubmissionService {
     private final CodeExecutionService codeExecutionService;
     private final ApplicationEventPublisher eventPublisher;
 
+    /**
+     * Pre-flight check for {@link #submitTestAttempt} — runs the same ownership/state
+     * validations on the request thread so 403/404/409 surface as proper HTTP errors.
+     * The actual submit then runs async on a worker.
+     */
+    @Transactional(readOnly = true)
+    public void assertSubmittable(Long testId, Long attemptId, Long studentId) {
+        TestAttemptEntity attempt = testAttemptRepository.findByIdWithTest(attemptId)
+                .orElseThrow(() -> new IllegalArgumentException("Test attempt not found"));
+
+        if (!attempt.getTestEntity().getId().equals(testId)) {
+            throw new IllegalArgumentException("Test attempt does not belong to this test");
+        }
+        if (!attempt.getStudent().getId().equals(studentId)) {
+            throw new AccessDeniedException("You do not have access to this test attempt");
+        }
+        if (attempt.isFinished()) {
+            throw new IllegalStateException("Test attempt is already completed");
+        }
+    }
+
+    /**
+     * Pre-flight check for the polling endpoint — ownership only, no state requirement.
+     */
+    @Transactional(readOnly = true)
+    public void assertCanReadAttempt(Long testId, Long attemptId, Long studentId) {
+        TestAttemptEntity attempt = testAttemptRepository.findByIdWithTest(attemptId)
+                .orElseThrow(() -> new IllegalArgumentException("Test attempt not found"));
+
+        if (!attempt.getTestEntity().getId().equals(testId)) {
+            throw new IllegalArgumentException("Test attempt does not belong to this test");
+        }
+        if (!attempt.getStudent().getId().equals(studentId)) {
+            throw new AccessDeniedException("You do not have access to this test attempt");
+        }
+    }
+
     @Transactional
     public TestSubmissionResultDto submitTestAttempt(Long testId, Long attemptId, Long studentId) {
         TestAttemptEntity attempt = testAttemptRepository.findByIdWithTest(attemptId)

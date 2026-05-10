@@ -62,6 +62,21 @@ public class AnswerMapper {
         return result;
     }
 
+    public SubmitStatus toApiSubmitStatus(SubmitStatusDto dto) {
+        if (dto == null) {
+            return null;
+        }
+
+        SubmitStatus status = new SubmitStatus();
+        status.setStatus(SubmitStatus.StatusEnum.fromValue(dto.getStatus()));
+        status.setStartedAt(toOffsetDateTime(dto.getStartedAt()));
+        status.setCompletedAt(toOffsetDateTime(dto.getCompletedAt()));
+        status.setResult(toApiTestSubmissionResult(dto.getResult()));
+        status.setError(dto.getError());
+
+        return status;
+    }
+
     public TestResultResponse toApiTestResultResponse(TestResultResponseDto dto) {
         if (dto == null) {
             return null;
