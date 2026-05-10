@@ -34,11 +34,11 @@ class RunnersTest {
     void javaRunner() {
         RunCommand cmd = new JavaRunner().buildRunCommand(384);
 
-        assertThat(cmd.getImage()).isEqualTo("openjdk:21-slim");
-        assertThat(cmd.getSourceFilename()).isEqualTo("Main.java");
+        assertThat(cmd.getImage()).isEqualTo("eclipse-temurin:21-jdk-alpine");
+        assertThat(cmd.getSourceFilename()).isEqualTo("Solution.java");
         assertThat(cmd.requiresCompilation()).isTrue();
-        assertThat(cmd.getCompileCmd()).containsExactly("javac", "/workspace/Main.java", "-d", "/workspace");
-        assertThat(cmd.getRunCmd()).containsExactly("java", "-Xmx384m", "-cp", "/workspace", "Main");
+        assertThat(cmd.getCompileCmd()).containsExactly("javac", "/workspace/Solution.java", "-d", "/tmp");
+        assertThat(cmd.getRunCmd()).containsExactly("java", "-Xmx384m", "-cp", "/tmp", "Solution");
     }
 
     @Test
@@ -70,7 +70,7 @@ class RunnersTest {
     void csharpRunner() {
         RunCommand cmd = new CSharpRunner().buildRunCommand(256);
 
-        assertThat(cmd.getImage()).isEqualTo("mono:6.12-slim");
+        assertThat(cmd.getImage()).isEqualTo("mono:6.12");
         assertThat(cmd.getSourceFilename()).isEqualTo("Main.cs");
         assertThat(cmd.requiresCompilation()).isTrue();
         assertThat(cmd.getCompileCmd()).containsExactly(

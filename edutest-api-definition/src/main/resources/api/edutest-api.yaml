@@ -2533,9 +2533,8 @@ components:
         memoryLimitMb:
           type: integer
         allowedLanguages:
-          type: array
-          items:
-            type: string
+          type: string
+          description: Comma-separated list of allowed languages
         starterCode:
           type: string
         solutionTemplate:

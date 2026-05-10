@@ -23,10 +23,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -120,7 +120,7 @@ public class DockerCodeExecutor {
                 .withCpuCount(1L)
                 .withPidsLimit(64L)
                 .withNetworkMode("none")
-                .withReadonlyRootfs(true)
+                .withReadonlyRootfs(properties.isReadonlyRootfs())
                 .withTmpFs(tmpfs)
                 .withAutoRemove(false);
 
@@ -140,12 +140,28 @@ public class DockerCodeExecutor {
     }
 
     private void writeSourceFile(String containerId, String filename, String sourceCode) throws Exception {
-        byte[] tarBytes = TarUtil.singleFileTar(filename, sourceCode.getBytes(StandardCharsets.UTF_8));
-        try (ByteArrayInputStream in = new ByteArrayInputStream(tarBytes)) {
-            dockerClient.copyArchiveToContainerCmd(containerId)
-                    .withRemotePath(WORKSPACE_DIR)
-                    .withTarInputStream(in)
-                    .exec();
+        // Why base64 + shell arg, not exec stdin or copyArchiveToContainerCmd:
+        //  - copyArchiveToContainerCmd silently no-ops on Docker Desktop / WSL2 when the target
+        //    is a tmpfs mount (file never appears inside the container).
+        //  - exec with stdin pipe hangs: docker-java does not signal EOF on the input stream,
+        //    so `cat > target` blocks until the global timeout (`Potok został zakończony`).
+        //  - base64 chars are URL-safe shell-safe ([A-Za-z0-9+/=]), so embedding them inside
+        //    single quotes is unambiguous and avoids any escaping minefield.
+        //
+        // Run as root because Docker mounts tmpfs at /workspace with default 0755 owned by
+        // root; the container's default user (`nobody`) cannot write there. Compile/run still
+        // execute as nobody — student code itself stays unprivileged.
+        String target = WORKSPACE_DIR + "/" + filename;
+        String b64 = Base64.getEncoder().encodeToString(sourceCode.getBytes(StandardCharsets.UTF_8));
+        ExecResult result = execInContainer(
+                containerId,
+                new String[]{"sh", "-c", "echo '" + b64 + "' | base64 -d > " + target},
+                null,
+                properties.getGlobalTimeoutMs(),
+                "root");
+        if (result.exitCode != 0) {
+            throw new RuntimeException(
+                    "Failed to write source file (exit " + result.exitCode + "): " + result.stderr);
         }
     }
 
@@ -211,12 +227,30 @@ public class DockerCodeExecutor {
     }
 
     private ExecResult execInContainer(String containerId, String[] cmd, String stdin, long timeoutMs) {
-        ExecCreateCmdResponse exec = dockerClient.execCreateCmd(containerId)
-                .withCmd(cmd)
+        return execInContainer(containerId, cmd, stdin, timeoutMs, null);
+    }
+
+    private ExecResult execInContainer(String containerId, String[] cmd, String stdin, long timeoutMs,
+                                       String userOverride) {
+        // docker-java's stdin pipe (withStdIn) doesn't close on stream exhaustion, so any
+        // process that calls input()/read() blocks forever waiting for EOF. Wrap the command
+        // in a shell pipe instead — the in-container shell closes the pipe properly when
+        // base64 -d finishes, giving the runner a clean EOF.
+        String[] effectiveCmd = cmd;
+        if (stdin != null) {
+            String b64 = Base64.getEncoder().encodeToString(stdin.getBytes(StandardCharsets.UTF_8));
+            String shellCmd = "echo '" + b64 + "' | base64 -d | " + joinForShell(cmd);
+            effectiveCmd = new String[]{"sh", "-c", shellCmd};
+        }
+
+        var execCmd = dockerClient.execCreateCmd(containerId)
+                .withCmd(effectiveCmd)
                 .withAttachStdout(true)
-                .withAttachStderr(true)
-                .withAttachStdin(stdin != null)
-                .exec();
+                .withAttachStderr(true);
+        if (userOverride != null) {
+            execCmd = execCmd.withUser(userOverride);
+        }
+        ExecCreateCmdResponse exec = execCmd.exec();
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
@@ -241,23 +275,17 @@ public class DockerCodeExecutor {
         };
 
         try {
-            ByteArrayInputStream stdinStream = stdin != null
-                    ? new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8))
-                    : null;
-
             dockerClient.execStartCmd(exec.getId())
-                    .withStdIn(stdinStream)
                     .exec(callback);
 
             finished = callback.awaitCompletion(timeoutMs, TimeUnit.MILLISECONDS);
             if (!finished) {
                 timedOut = true;
+                // Closing the callback closes the response stream; the daemon then SIGKILLs
+                // the exec process. We deliberately do NOT kill the container itself —
+                // subsequent test cases need it to keep running.
                 try {
                     callback.close();
-                } catch (Exception ignore) {
-                }
-                try {
-                    dockerClient.killContainerCmd(containerId).exec();
                 } catch (Exception ignore) {
                 }
             }
@@ -311,6 +339,16 @@ public class DockerCodeExecutor {
     private static String truncate(String s, int max) {
         if (s == null) return null;
         return s.length() <= max ? s : s.substring(0, max);
+    }
+
+    /** POSIX-shell-quote each arg and join with spaces — preserves whitespace inside args. */
+    private static String joinForShell(String[] cmd) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < cmd.length; i++) {
+            if (i > 0) sb.append(' ');
+            sb.append('\'').append(cmd[i].replace("'", "'\\''")).append('\'');
+        }
+        return sb.toString();
     }
 
     private record ExecResult(String stdout, String stderr, int exitCode, long durationMs,

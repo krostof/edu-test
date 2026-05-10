@@ -2,6 +2,7 @@ package com.edutest.codeexecution.docker;
 
 import com.edutest.codeexecution.ExecutionReport;
 import com.edutest.codeexecution.config.CodeExecutionProperties;
+import com.edutest.codeexecution.runners.CSharpRunner;
 import com.edutest.codeexecution.runners.JavaRunner;
 import com.edutest.codeexecution.runners.JavascriptRunner;
 import com.edutest.codeexecution.runners.LanguageRunnerRegistry;
@@ -15,8 +16,8 @@ import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
-import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
+import com.github.dockerjava.zerodep.ZerodepDockerHttpClient;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -35,7 +36,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Disabled by default. Enable with {@code -Ddocker.it=true} on a machine
  * with a reachable Docker daemon. First run will pull {@code python:3.12-alpine}
- * (~50 MB) which can take a minute on a cold cache.
+ * (~50 MB) and {@code mono:6.12} (~620 MB; slim variant lacks {@code mcs}) — can
+ * take several minutes on a cold cache.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @EnabledIfSystemProperty(named = "docker.it", matches = "true")
@@ -54,7 +56,9 @@ class DockerCodeExecutorIT {
         DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
                 .withDockerHost(host)
                 .build();
-        DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder()
+        // Zerodep transport handles Windows npipe paths natively; httpclient5 mis-parses them
+        // as TCP and tries to connect to npipe://localhost:2375.
+        DockerHttpClient httpClient = new ZerodepDockerHttpClient.Builder()
                 .dockerHost(config.getDockerHost())
                 .sslConfig(config.getSSLConfig())
                 .maxConnections(20)
@@ -65,6 +69,7 @@ class DockerCodeExecutorIT {
         dockerClient.pingCmd().exec();
 
         ensureImage("python:3.12-alpine");
+        ensureImage("mono:6.12");
 
         CodeExecutionProperties properties = new CodeExecutionProperties();
         properties.setEnabled(true);
@@ -72,11 +77,16 @@ class DockerCodeExecutorIT {
         properties.setDefaultTimeMs(5_000L);
         properties.setDefaultMemoryMb(128);
         properties.setOutputLimitChars(2_000);
+        // Disable readonly rootfs for the IT — required to make copyArchiveToContainer work
+        // against Docker Desktop on Windows/WSL2 (silent failure / "rootfs read-only" otherwise).
+        // Workspace stays on tmpfs so containers still can't persist anything cross-run.
+        properties.setReadonlyRootfs(false);
 
         LanguageRunnerRegistry registry = new LanguageRunnerRegistry(List.of(
                 new PythonRunner(),
                 new JavascriptRunner(),
-                new JavaRunner()
+                new JavaRunner(),
+                new CSharpRunner()
         ));
 
         executor = new DockerCodeExecutor(dockerClient, registry, properties);
@@ -151,6 +161,39 @@ class DockerCodeExecutorIT {
         assertThat(report.getExecutionStatus()).isEqualTo(ExecutionStatusEnum.TIME_LIMIT_EXCEEDED);
         assertThat(report.getTestCaseResults().get(0).isTimedOut()).isTrue();
         assertThat(duration).isLessThan(15_000L);
+    }
+
+    @Test
+    @DisplayName("C#: Console.WriteLine compiles via mcs and runs under Mono")
+    void csharpHappyPath() {
+        // Class name must differ from method name (CS0542 otherwise).
+        String code = """
+                using System;
+                class Program {
+                    static void Main(string[] args) {
+                        int n = int.Parse(Console.ReadLine());
+                        Console.WriteLine(n * 2);
+                    }
+                }
+                """;
+        List<TestCaseEntity> cases = List.of(
+                testCase(1L, "5", "10"),
+                testCase(2L, "7", "14"),
+                testCase(3L, "0", "0"));
+
+        // Mono cold-start under Docker can be slow on the first run — give it more headroom
+        // than Python (which uses ~50 MB alpine) without changing global limits.
+        ExecutionReport report = executor.execute(code, "csharp", cases, 10_000, 256);
+
+        System.err.println("=== compilationError: " + report.getCompilationError());
+        System.err.println("=== compilationStatus: " + report.getCompilationStatus());
+        System.err.println("=== executionStatus: " + report.getExecutionStatus());
+
+        assertThat(report.getCompilationStatus()).isEqualTo(CompilationStatusEnum.SUCCESS);
+        assertThat(report.getExecutionStatus()).isEqualTo(ExecutionStatusEnum.SUCCESS);
+        assertThat(report.getTestCaseResults())
+                .hasSize(3)
+                .allSatisfy(r -> assertThat(r.isPassed()).isTrue());
     }
 
     @Test

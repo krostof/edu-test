@@ -40,9 +40,12 @@
             <artifactId>docker-java-core</artifactId>
             <version>${docker-java.version}</version>
         </dependency>
+        <!-- Zerodep transport handles Windows npipe natively. The httpclient5 transport
+             mis-parses npipe URLs as TCP localhost:2375 on Windows / Docker Desktop, so
+             zerodep is the safer default across daemons (Linux unix socket, Windows npipe). -->
         <dependency>
             <groupId>com.github.docker-java</groupId>
-            <artifactId>docker-java-transport-httpclient5</artifactId>
+            <artifactId>docker-java-transport-zerodep</artifactId>
             <version>${docker-java.version}</version>
         </dependency>
 
