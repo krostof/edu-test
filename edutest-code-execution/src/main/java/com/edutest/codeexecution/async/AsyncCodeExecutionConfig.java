@@ -34,4 +34,26 @@ public class AsyncCodeExecutionConfig {
         exec.initialize();
         return exec;
     }
+
+    /**
+     * Separate executor for full test submission grading. Submits do many Docker runs
+     * back-to-back (one per CODING question), so isolating them prevents a slow submit
+     * from starving preview requests of the codeRunExecutor pool.
+     *
+     * Pool kept small — the bottleneck is the Docker daemon, and submits are bursty
+     * (whole class submits within minutes of the deadline).
+     */
+    @Bean(name = "submitGradingExecutor")
+    public Executor submitGradingExecutor() {
+        ThreadPoolTaskExecutor exec = new ThreadPoolTaskExecutor();
+        exec.setCorePoolSize(2);
+        exec.setMaxPoolSize(4);
+        exec.setQueueCapacity(100);
+        exec.setThreadNamePrefix("submit-grade-");
+        exec.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        exec.setWaitForTasksToCompleteOnShutdown(true);
+        exec.setAwaitTerminationSeconds(120);
+        exec.initialize();
+        return exec;
+    }
 }

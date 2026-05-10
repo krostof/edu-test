@@ -1526,7 +1526,9 @@ paths:
       tags:
         - Tests
       summary: Submit test attempt
-      description: Finish and submit the test attempt for grading
+      description: |
+        Kicks off async grading of the test attempt. Returns immediately with a
+        PENDING status; client polls `/submit-status` until DONE or FAILED.
       operationId: submitTestAttempt
       security:
         - BearerAuth: []
@@ -1544,18 +1546,52 @@ paths:
             type: integer
             format: int64
       responses:
-        '200':
-          description: Test submitted successfully
+        '202':
+          description: Submit job accepted; poll /submit-status for completion
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TestSubmissionResult'
+                $ref: '#/components/schemas/SubmitStatus'
         '403':
           description: Access denied - not your attempt
         '404':
           description: Test attempt not found
         '409':
           description: Test attempt already completed
+
+  /tests/{testId}/attempts/{attemptId}/submit-status:
+    get:
+      tags:
+        - Tests
+      summary: Poll status of a submit job
+      description: Returns current state of the submit kicked off by POST /submit
+      operationId: getSubmitStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: attemptId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Current submit job status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmitStatus'
+        '403':
+          description: Access denied - not your attempt
+        '404':
+          description: Test attempt not found
 
   /tests/{testId}/attempts/{attemptId}/results:
     get:
@@ -2929,6 +2965,26 @@ components:
         pendingGradingCount:
           type: integer
           description: Number of assignments awaiting manual grading
+
+    SubmitStatus:
+      type: object
+      description: Polled status of an async test-attempt submit job
+      properties:
+        status:
+          type: string
+          enum: [PENDING, DONE, FAILED, NONE]
+          description: NONE = no submit job has been started for this attempt (or job has expired)
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        result:
+          $ref: '#/components/schemas/TestSubmissionResult'
+        error:
+          type: string
+          description: Populated when status = FAILED
 
     TestResultResponse:
       type: object
