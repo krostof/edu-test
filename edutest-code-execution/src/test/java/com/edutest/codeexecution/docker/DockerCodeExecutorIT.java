@@ -36,8 +36,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Disabled by default. Enable with {@code -Ddocker.it=true} on a machine
  * with a reachable Docker daemon. First run will pull {@code python:3.12-alpine}
- * (~50 MB) and {@code mono:6.12} (~620 MB; slim variant lacks {@code mcs}) — can
- * take several minutes on a cold cache.
+ * (~50 MB), {@code eclipse-temurin:21-jdk-alpine} (~200 MB) and {@code mono:6.12}
+ * (~620 MB; slim variant lacks {@code mcs}) — can take several minutes on a cold
+ * cache.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @EnabledIfSystemProperty(named = "docker.it", matches = "true")
@@ -69,6 +70,7 @@ class DockerCodeExecutorIT {
         dockerClient.pingCmd().exec();
 
         ensureImage("python:3.12-alpine");
+        ensureImage("eclipse-temurin:21-jdk-alpine");
         ensureImage("mono:6.12");
 
         CodeExecutionProperties properties = new CodeExecutionProperties();
@@ -164,6 +166,37 @@ class DockerCodeExecutorIT {
     }
 
     @Test
+    @DisplayName("Java: javac compiles Solution.java to /tmp, java runs the class")
+    void javaHappyPath() {
+        // Class name must be `Solution` to match JavaRunner.sourceFilename = "Solution.java"
+        // (Java requires the public class to share its file's name).
+        String code = """
+                import java.util.Scanner;
+                public class Solution {
+                    public static void main(String[] args) {
+                        Scanner sc = new Scanner(System.in);
+                        int n = sc.nextInt();
+                        System.out.println(n * 2);
+                    }
+                }
+                """;
+        List<TestCaseEntity> cases = List.of(
+                testCase(1L, "5", "10"),
+                testCase(2L, "7", "14"),
+                testCase(3L, "0", "0"));
+
+        // JVM cold-start under Docker is heavier than Python — give it 10s per case and
+        // bump the memory headroom (-Xmx in the runner caps the heap to memoryLimitMb).
+        ExecutionReport report = executor.execute(code, "java", cases, 10_000, 384);
+
+        assertThat(report.getCompilationStatus()).isEqualTo(CompilationStatusEnum.SUCCESS);
+        assertThat(report.getExecutionStatus()).isEqualTo(ExecutionStatusEnum.SUCCESS);
+        assertThat(report.getTestCaseResults())
+                .hasSize(3)
+                .allSatisfy(r -> assertThat(r.isPassed()).isTrue());
+    }
+
+    @Test
     @DisplayName("C#: Console.WriteLine compiles via mcs and runs under Mono")
     void csharpHappyPath() {
         // Class name must differ from method name (CS0542 otherwise).
@@ -184,10 +217,6 @@ class DockerCodeExecutorIT {
         // Mono cold-start under Docker can be slow on the first run — give it more headroom
         // than Python (which uses ~50 MB alpine) without changing global limits.
         ExecutionReport report = executor.execute(code, "csharp", cases, 10_000, 256);
-
-        System.err.println("=== compilationError: " + report.getCompilationError());
-        System.err.println("=== compilationStatus: " + report.getCompilationStatus());
-        System.err.println("=== executionStatus: " + report.getExecutionStatus());
 
         assertThat(report.getCompilationStatus()).isEqualTo(CompilationStatusEnum.SUCCESS);
         assertThat(report.getExecutionStatus()).isEqualTo(ExecutionStatusEnum.SUCCESS);
