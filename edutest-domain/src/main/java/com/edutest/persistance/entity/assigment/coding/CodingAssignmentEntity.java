@@ -33,7 +33,7 @@ public class CodingAssignmentEntity extends AssignmentEntity {
     @Column(name = "solution_template", length = 5000)
     private String solutionTemplate;
 
-    @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<TestCaseEntity> testCases = new ArrayList<>();
 
 

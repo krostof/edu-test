@@ -8,6 +8,7 @@ import com.edutest.api.model.MoveAssignmentRequest;
 import com.edutest.api.model.TestCaseRequest;
 import com.edutest.api.model.UpdateAssignmentRequest;
 import com.edutest.domain.assignment.Assignment;
+import com.edutest.domain.assignment.coding.CodingAssignment;
 import com.edutest.domain.assignment.coding.TestCase;
 import com.edutest.domain.assignment.common.ChoiceOption;
 import com.edutest.service.assignmentservice.AssignmentService;
@@ -90,8 +91,20 @@ public class AssignmentApiController implements AssignmentsApi {
     @Override
     public ResponseEntity<AssignmentResponse> updateAssignment(Long testId, Long assignmentId, UpdateAssignmentRequest request) {
         log.info("Updating assignment id={}", assignmentId);
-        Assignment updated = assignmentService.updateAssignment(
-                assignmentId, request.getTitle(), request.getDescription(), request.getPoints());
+        Assignment existing = assignmentService.findById(assignmentId);
+        Assignment updated;
+        if (existing instanceof CodingAssignment) {
+            List<TestCase> testCases = request.getTestCases() != null ? mapTestCases(request.getTestCases()) : null;
+            updated = assignmentService.updateCodingAssignment(
+                    assignmentId,
+                    request.getTitle(), request.getDescription(), request.getPoints(),
+                    request.getTimeLimitMs(), request.getMemoryLimitMb(),
+                    request.getAllowedLanguages(), request.getStarterCode(),
+                    request.getSolutionTemplate(), testCases);
+        } else {
+            updated = assignmentService.updateAssignment(
+                    assignmentId, request.getTitle(), request.getDescription(), request.getPoints());
+        }
         return ResponseEntity.ok(assignmentMapper.toApiResponse(updated));
     }
 

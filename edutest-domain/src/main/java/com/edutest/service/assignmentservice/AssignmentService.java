@@ -186,7 +186,56 @@ public class AssignmentService {
         log.info("Updating assignment: id={}", id);
 
         Assignment assignment = findById(id);
+        applyCommonUpdates(assignment, title, description, points);
 
+        validateAssignment(assignment);
+        Assignment updatedAssignment = assignmentRepository.save(assignment);
+
+        log.info("Assignment updated successfully with id={}", updatedAssignment.getId());
+        return updatedAssignment;
+    }
+
+    public CodingAssignment updateCodingAssignment(Long id, String title, String description, Float points,
+                                                   Integer timeLimitMs, Integer memoryLimitMb,
+                                                   String allowedLanguages, String starterCode,
+                                                   String solutionTemplate, List<TestCase> testCases) {
+        log.info("Updating coding assignment: id={}", id);
+
+        Assignment assignment = findById(id);
+        if (!(assignment instanceof CodingAssignment coding)) {
+            throw new IllegalArgumentException("Assignment " + id + " is not a coding assignment");
+        }
+
+        applyCommonUpdates(coding, title, description, points);
+
+        if (timeLimitMs != null) {
+            coding.setTimeLimitMs(timeLimitMs);
+        }
+        if (memoryLimitMb != null) {
+            coding.setMemoryLimitMb(memoryLimitMb);
+        }
+        if (allowedLanguages != null) {
+            coding.setAllowedLanguages(allowedLanguages);
+        }
+        if (starterCode != null) {
+            coding.setStarterCode(starterCode);
+        }
+        if (solutionTemplate != null) {
+            coding.setSolutionTemplate(solutionTemplate);
+        }
+        if (testCases != null) {
+            coding.setTestCases(testCases);
+        }
+        coding.setUpdatedAt(LocalDateTime.now());
+
+        validateAssignment(coding);
+        CodingAssignment updated = (CodingAssignment) assignmentRepository.save(coding);
+
+        log.info("Coding assignment updated successfully with id={}", updated.getId());
+        return updated;
+    }
+
+    private void applyCommonUpdates(Assignment assignment, String title, String description, Float points) {
         if (title != null && !title.equals(assignment.getTitle())) {
             if (assignmentRepository.existsByTestIdAndTitle(assignment.getTestId(), title)) {
                 throw new IllegalArgumentException("Assignment with title '" + title + "' already exists in this test");
@@ -201,12 +250,6 @@ public class AssignmentService {
         if (points != null) {
             assignment.updatePoints(points);
         }
-
-        validateAssignment(assignment);
-        Assignment updatedAssignment = assignmentRepository.save(assignment);
-        
-        log.info("Assignment updated successfully with id={}", updatedAssignment.getId());
-        return updatedAssignment;
     }
 
     public void deleteAssignment(Long id) {
