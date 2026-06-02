@@ -4,7 +4,9 @@ import com.edutest.persistance.entity.common.BaseEntity;
 import com.edutest.persistance.entity.group.StudentGroupEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLRestriction;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -15,6 +17,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLRestriction("deleted_at IS NULL")
 public class UserEntity extends BaseEntity {
 
     @Column(name = "username", nullable = false, unique = true, length = 50)
@@ -42,6 +45,9 @@ public class UserEntity extends BaseEntity {
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @Column(name = "student_number", length = 20)
     private String studentNumber;

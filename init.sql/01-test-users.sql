@@ -93,3 +93,6 @@ WHERE username IN ('student5', 'student6', 'student7');
 UPDATE users SET student_group_id = (SELECT id FROM student_groups WHERE name = 'Grupa C - Matematyka')
 WHERE username IN ('student8', 'student9', 'student10');
 
+-- Backfill @Version (BaseEntity) — Hibernate requires non-null version on UPDATE
+UPDATE users SET version = 0 WHERE version IS NULL;
+UPDATE student_groups SET version = 0 WHERE version IS NULL;

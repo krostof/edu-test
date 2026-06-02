@@ -19,6 +19,13 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
+    // Overrides the inherited EntityManager.find()-based lookup with JPQL so that
+    // @SQLRestriction("deleted_at IS NULL") is honored on fetch-by-id too (find() by
+    // primary key bypasses @SQLRestriction; JPQL does not). Keeps soft-deleted users
+    // hidden from detail endpoints, not just from list/search queries.
+    @Query("SELECT u FROM UserEntity u WHERE u.id = :id")
+    Optional<UserEntity> findById(@Param("id") Long id);
+
     Optional<UserEntity> findByUsername(String username);
 
     Optional<UserEntity> findByEmail(String email);

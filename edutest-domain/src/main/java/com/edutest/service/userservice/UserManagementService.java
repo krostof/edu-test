@@ -4,6 +4,8 @@ import com.edutest.api.model.*;
 import com.edutest.dto.BatchOperationResult;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.entity.user.UserEntityRole;
+import com.edutest.persistance.repository.TestAttemptJpaRepository;
+import com.edutest.persistance.repository.TestRepository;
 import com.edutest.persistance.repository.UserRepository;
 import com.edutest.service.port.LoginGeneratorPort;
 import com.edutest.util.UserMapper;
@@ -17,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -28,6 +31,8 @@ public class UserManagementService {
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
     private final LoginGeneratorPort loginGenerator;
+    private final TestRepository testRepository;
+    private final TestAttemptJpaRepository testAttemptJpaRepository;
 
     @Transactional
     public UserProfile createStudent(CreateStudentRequest request) {
@@ -161,10 +166,31 @@ public class UserManagementService {
                     String.format("Cannot delete teacher - has %d group(s) assigned. Please reassign or delete groups first.", groupCount)
                 );
             }
+
+            long testCount = testRepository.countByCreatedBy(user);
+            if (testCount > 0) {
+                log.warn("Cannot delete teacher {} - authored {} test(s)", userId, testCount);
+                throw new IllegalStateException(
+                    String.format("Cannot delete teacher - is the author of %d test(s). Deactivate the account instead to preserve test history.", testCount)
+                );
+            }
         }
 
-        userRepository.deleteById(userId);
-        log.info("User {} deleted successfully", userId);
+        long attemptCount = testAttemptJpaRepository.countByStudentId(userId);
+        if (attemptCount > 0) {
+            log.warn("Cannot delete user {} - has {} test attempt(s)", userId, attemptCount);
+            throw new IllegalStateException(
+                String.format("Cannot delete user - has %d test attempt(s). Deactivate the account instead to preserve attempt history.", attemptCount)
+            );
+        }
+
+        // Soft delete: keep the row (and all history that references it) but hide it from every read.
+        // @SQLRestriction on UserEntity excludes deleted_at IS NOT NULL rows from all queries.
+        // Users still referenced by NOT-NULL FKs (authored tests, attempts) are blocked above so
+        // soft-deletion never leaves a dangling reference that would null-out on load.
+        user.setDeletedAt(LocalDateTime.now());
+        userRepository.save(user);
+        log.info("User {} soft-deleted successfully", userId);
     }
 
     @Transactional

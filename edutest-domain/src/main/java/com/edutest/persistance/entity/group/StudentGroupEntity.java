@@ -4,7 +4,9 @@ import com.edutest.persistance.entity.common.BaseEntity;
 import com.edutest.persistance.entity.user.UserEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLRestriction;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,6 +17,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLRestriction("deleted_at IS NULL")
 public class StudentGroupEntity extends BaseEntity {
 
     @Column(name = "name", nullable = false, length = 100)
@@ -22,6 +25,9 @@ public class StudentGroupEntity extends BaseEntity {
 
     @Column(name = "description", length = 500)
     private String description;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

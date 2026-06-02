@@ -14,6 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.edutest.persistance.entity.group.StudentGroupEntity;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -134,14 +136,25 @@ public class StudentGroupService {
     }
 
     public void deleteStudentGroup(Long id) {
-        log.info("Deleting student group with id: {}", id);
+        log.info("Soft-deleting student group with id: {}", id);
 
-        if (!studentGroupRepository.existsById(id)) {
-            throw new IllegalArgumentException("Student group not found with id: " + id);
+        StudentGroupEntity group = studentGroupJpaRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Student group not found with id: " + id));
+
+        // Detach students so they return to the "no group" pool (frees up the student_group_id FK).
+        List<UserEntity> students = userRepository.findStudentsByGroupId(id);
+        for (UserEntity student : students) {
+            student.setStudentGroup(null);
+            userRepository.save(student);
         }
 
-        studentGroupRepository.deleteById(id);
-        log.info("Student group deleted successfully with id: {}", id);
+        // Drop assignment links so the group disappears from any test it was assigned to.
+        studentGroupJpaRepository.removeGroupFromAllTests(id);
+
+        // Soft delete: keep the row but hide it from every read via @SQLRestriction.
+        group.setDeletedAt(LocalDateTime.now());
+        studentGroupJpaRepository.save(group);
+        log.info("Student group {} soft-deleted successfully ({} students detached)", id, students.size());
     }
 
     // Teacher management

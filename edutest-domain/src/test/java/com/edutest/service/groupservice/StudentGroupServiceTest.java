@@ -273,23 +273,34 @@ class StudentGroupServiceTest {
     class DeleteStudentGroupTests {
 
         @Test
-        @DisplayName("Should delete group successfully")
-        void shouldDeleteGroup() {
-            // Given
-            when(studentGroupRepository.existsById(10L)).thenReturn(true);
+        @DisplayName("Should soft-delete group: set deletedAt, detach students, drop test links")
+        void shouldSoftDeleteGroup() {
+            // Given a group with one student assigned to it
+            studentEntity.setStudentGroup(groupEntity);
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(userRepository.findStudentsByGroupId(10L)).thenReturn(List.of(studentEntity));
 
             // When
             studentGroupService.deleteStudentGroup(10L);
 
-            // Then
-            verify(studentGroupRepository).deleteById(10L);
+            // Then — soft delete must NOT hard-delete; it sets deletedAt and saves the group.
+            assertThat(groupEntity.getDeletedAt()).isNotNull();
+            verify(studentGroupJpaRepository).save(groupEntity);
+            verify(studentGroupJpaRepository, never()).deleteById(any());
+
+            // The student is detached so they return to the "no group" pool.
+            assertThat(studentEntity.getStudentGroup()).isNull();
+            verify(userRepository).save(studentEntity);
+
+            // Assignment links to any test are removed.
+            verify(studentGroupJpaRepository).removeGroupFromAllTests(10L);
         }
 
         @Test
         @DisplayName("Should throw exception when group not found")
         void shouldThrowExceptionWhenGroupNotFoundForDelete() {
             // Given
-            when(studentGroupRepository.existsById(999L)).thenReturn(false);
+            when(studentGroupJpaRepository.findById(999L)).thenReturn(Optional.empty());
 
             // When/Then
             assertThatThrownBy(() -> studentGroupService.deleteStudentGroup(999L))

@@ -41,6 +41,8 @@ public interface TestAttemptJpaRepository extends JpaRepository<TestAttemptEntit
 
     boolean existsByTestEntityIdAndStudentId(Long testId, Long studentId);
 
+    long countByStudentId(Long studentId);
+
     long countByTestEntityId(Long testId);
 
     long countByTestEntityIdAndIsCompleted(Long testId, Boolean isCompleted);
