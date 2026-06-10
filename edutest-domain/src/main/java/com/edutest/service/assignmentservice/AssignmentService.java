@@ -8,8 +8,11 @@ import com.edutest.domain.assignment.singlechoice.SingleChoiceAssignment;
 import com.edutest.domain.assignment.openquestion.OpenQuestionAssignment;
 import com.edutest.domain.assignment.common.ChoiceOption;
 import com.edutest.domain.test.Test;
-import com.edutest.persistance.repository.AssignmentRepository;
+import com.edutest.persistance.entity.assigment.AssignmentEntity;
+import com.edutest.persistance.entity.test.TestEntity;
+import com.edutest.persistance.repository.AssignmentJpaRepository;
 import com.edutest.persistance.repository.TestRepository;
+import com.edutest.util.AssignmentMapper;
 import com.edutest.util.TestMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +30,8 @@ import java.util.List;
 @Transactional
 public class AssignmentService {
 
-    private final AssignmentRepository assignmentRepository;
+    private final AssignmentJpaRepository assignmentJpaRepository;
+    private final AssignmentMapper assignmentMapper;
     private final TestRepository testRepository;
     private final TestMapper testMapper;
 
@@ -52,7 +56,7 @@ public class AssignmentService {
                 .build();
 
         validateAssignment(assignment);
-        Assignment savedAssignment = assignmentRepository.save(assignment);
+        Assignment savedAssignment = persistAssignment(assignment);
         
         log.info("Single choice assignment created with id={}", savedAssignment.getId());
         return (SingleChoiceAssignment) savedAssignment;
@@ -84,7 +88,7 @@ public class AssignmentService {
                 .build();
 
         validateAssignment(assignment);
-        Assignment savedAssignment = assignmentRepository.save(assignment);
+        Assignment savedAssignment = persistAssignment(assignment);
         
         log.info("Multiple choice assignment created with id={}", savedAssignment.getId());
         return (MultipleChoiceAssignment) savedAssignment;
@@ -112,7 +116,7 @@ public class AssignmentService {
                 .build();
 
         validateAssignment(assignment);
-        Assignment savedAssignment = assignmentRepository.save(assignment);
+        Assignment savedAssignment = persistAssignment(assignment);
         
         log.info("Open question assignment created with id={}", savedAssignment.getId());
         return (OpenQuestionAssignment) savedAssignment;
@@ -145,7 +149,7 @@ public class AssignmentService {
                 .build();
 
         validateAssignment(assignment);
-        Assignment savedAssignment = assignmentRepository.save(assignment);
+        Assignment savedAssignment = persistAssignment(assignment);
         
         log.info("Coding assignment created with id={}", savedAssignment.getId());
         return (CodingAssignment) savedAssignment;
@@ -154,32 +158,42 @@ public class AssignmentService {
     @Transactional(readOnly = true)
     public Assignment findById(Long id) {
         log.debug("Finding assignment by id: {}", id);
-        return assignmentRepository.findById(id)
+        return assignmentJpaRepository.findById(id)
+                .map(assignmentMapper::toDomain)
                 .orElseThrow(() -> new IllegalArgumentException("Assignment not found with id: " + id));
     }
 
     @Transactional(readOnly = true)
     public List<Assignment> findByTestId(Long testId) {
         log.debug("Finding assignments by test id: {}", testId);
-        return assignmentRepository.findByTestIdOrderByOrderNumber(testId);
+        return assignmentJpaRepository.findByTestEntityIdOrderByOrderNumber(testId).stream()
+                .map(assignmentMapper::toDomain)
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public List<Assignment> findByTestIdAndType(Long testId, AssignmentType type) {
         log.debug("Finding assignments by test id: {} and type: {}", testId, type);
-        return assignmentRepository.findByTestIdAndType(testId, type);
+        Class<? extends AssignmentEntity> entityClass = assignmentMapper.entityClassFor(type);
+        return assignmentJpaRepository.findByTestEntityIdOrderByOrderNumber(testId).stream()
+                .filter(entity -> entity.getClass().equals(entityClass))
+                .map(assignmentMapper::toDomain)
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public Page<Assignment> findByType(AssignmentType type, Pageable pageable) {
         log.debug("Finding assignments by type: {} with pagination", type);
-        return assignmentRepository.findByType(type, pageable);
+        Class<? extends AssignmentEntity> entityClass = assignmentMapper.entityClassFor(type);
+        return assignmentJpaRepository.findByType(entityClass, pageable)
+                .map(assignmentMapper::toDomain);
     }
 
     @Transactional(readOnly = true)
     public Page<Assignment> searchAssignments(String searchTerm, Pageable pageable) {
         log.debug("Searching assignments with term: {}", searchTerm);
-        return assignmentRepository.findByTitleOrDescriptionContaining(searchTerm, pageable);
+        return assignmentJpaRepository.findByTitleOrDescriptionContaining(searchTerm, pageable)
+                .map(assignmentMapper::toDomain);
     }
 
     public Assignment updateAssignment(Long id, String title, String description, Float points) {
@@ -189,7 +203,7 @@ public class AssignmentService {
         applyCommonUpdates(assignment, title, description, points);
 
         validateAssignment(assignment);
-        Assignment updatedAssignment = assignmentRepository.save(assignment);
+        Assignment updatedAssignment = persistAssignment(assignment);
 
         log.info("Assignment updated successfully with id={}", updatedAssignment.getId());
         return updatedAssignment;
@@ -229,7 +243,7 @@ public class AssignmentService {
         coding.setUpdatedAt(LocalDateTime.now());
 
         validateAssignment(coding);
-        CodingAssignment updated = (CodingAssignment) assignmentRepository.save(coding);
+        CodingAssignment updated = (CodingAssignment) persistAssignment(coding);
 
         log.info("Coding assignment updated successfully with id={}", updated.getId());
         return updated;
@@ -237,7 +251,7 @@ public class AssignmentService {
 
     private void applyCommonUpdates(Assignment assignment, String title, String description, Float points) {
         if (title != null && !title.equals(assignment.getTitle())) {
-            if (assignmentRepository.existsByTestIdAndTitle(assignment.getTestId(), title)) {
+            if (assignmentJpaRepository.existsByTestEntityIdAndTitle(assignment.getTestId(), title)) {
                 throw new IllegalArgumentException("Assignment with title '" + title + "' already exists in this test");
             }
             assignment.updateTitle(title);
@@ -262,7 +276,7 @@ public class AssignmentService {
             throw new IllegalStateException("Cannot delete assignments from active tests");
         }
 
-        assignmentRepository.deleteById(id);
+        assignmentJpaRepository.deleteById(id);
         log.info("Assignment deleted successfully with id: {}", id);
     }
 
@@ -271,14 +285,14 @@ public class AssignmentService {
 
         Assignment assignment = findById(id);
         
-        if (assignmentRepository.existsByTestIdAndOrderNumber(assignment.getTestId(), newOrderNumber)) {
+        if (assignmentJpaRepository.existsByTestEntityIdAndOrderNumber(assignment.getTestId(), newOrderNumber)) {
             throw new IllegalArgumentException("Order number " + newOrderNumber + " is already taken in this test");
         }
 
         assignment.setOrderNumber(newOrderNumber);
         assignment.setUpdatedAt(LocalDateTime.now());
 
-        Assignment updatedAssignment = assignmentRepository.save(assignment);
+        Assignment updatedAssignment = persistAssignment(assignment);
         log.info("Assignment moved successfully");
         
         return updatedAssignment;
@@ -291,7 +305,7 @@ public class AssignmentService {
         Integer newOrderNumber = getNextOrderNumber(original.getTestId());
         
         Assignment duplicate = createDuplicateAssignment(original, newOrderNumber);
-        Assignment savedDuplicate = assignmentRepository.save(duplicate);
+        Assignment savedDuplicate = persistAssignment(duplicate);
         
         log.info("Assignment duplicated successfully with new id={}", savedDuplicate.getId());
         return savedDuplicate;
@@ -313,17 +327,17 @@ public class AssignmentService {
 
     @Transactional(readOnly = true)
     public long countByTestId(Long testId) {
-        return assignmentRepository.countByTestId(testId);
+        return assignmentJpaRepository.countByTestEntityId(testId);
     }
 
     @Transactional(readOnly = true)
     public Float getTotalPointsByTestId(Long testId) {
-        return assignmentRepository.sumPointsByTestId(testId);
+        return assignmentJpaRepository.sumPointsByTestId(testId);
     }
 
     @Transactional(readOnly = true)
     public long countByType(AssignmentType type) {
-        return assignmentRepository.countByType(type);
+        return assignmentJpaRepository.countByType(assignmentMapper.entityClassFor(type));
     }
 
     private Test getTestById(Long testId) {
@@ -333,7 +347,7 @@ public class AssignmentService {
     }
 
     private void validateAssignmentCreation(Test test, String title) {
-        if (assignmentRepository.existsByTestIdAndTitle(test.getId(), title)) {
+        if (assignmentJpaRepository.existsByTestEntityIdAndTitle(test.getId(), title)) {
             throw new IllegalArgumentException("Assignment with title '" + title + "' already exists in this test");
         }
     }
@@ -374,8 +388,16 @@ public class AssignmentService {
     }
 
     private Integer getNextOrderNumber(Long testId) {
-        Integer maxOrder = assignmentRepository.getMaxOrderNumberByTestId(testId);
+        Integer maxOrder = assignmentJpaRepository.getMaxOrderNumberByTestId(testId);
         return maxOrder != null ? maxOrder + 1 : 1;
+    }
+
+    private Assignment persistAssignment(Assignment assignment) {
+        TestEntity testEntity = assignment.getTestId() != null
+                ? testRepository.getReferenceById(assignment.getTestId())
+                : null;
+        AssignmentEntity savedEntity = assignmentJpaRepository.save(assignmentMapper.toEntity(assignment, testEntity));
+        return assignmentMapper.toDomain(savedEntity);
     }
 
     private Assignment createDuplicateAssignment(Assignment original, Integer newOrderNumber) {

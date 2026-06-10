@@ -7,8 +7,8 @@ import com.edutest.persistance.entity.group.StudentGroupEntity;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.entity.user.UserEntityRole;
 import com.edutest.persistance.repository.StudentGroupJpaRepository;
-import com.edutest.persistance.repository.StudentGroupRepository;
 import com.edutest.persistance.repository.UserRepository;
+import com.edutest.util.StudentGroupMapper;
 import com.edutest.util.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,10 +35,10 @@ import static org.mockito.Mockito.*;
 class StudentGroupServiceTest {
 
     @Mock
-    private StudentGroupRepository studentGroupRepository;
+    private StudentGroupJpaRepository studentGroupJpaRepository;
 
     @Mock
-    private StudentGroupJpaRepository studentGroupJpaRepository;
+    private StudentGroupMapper studentGroupMapper;
 
     @Mock
     private UserRepository userRepository;
@@ -92,11 +92,13 @@ class StudentGroupServiceTest {
                 .username("teacher1")
                 .roles(Set.of(UserRole.TEACHER))
                 .build();
+        teacherUser.setId(1L);
 
         studentUser = User.builder()
                 .username("student1")
                 .roles(Set.of(UserRole.STUDENT))
                 .build();
+        studentUser.setId(2L);
 
         studentGroup = StudentGroup.builder()
                 .name("Group A")
@@ -104,6 +106,7 @@ class StudentGroupServiceTest {
                 .teachers(new ArrayList<>())
                 .students(new ArrayList<>())
                 .build();
+        studentGroup.setId(10L);
 
         groupEntity = new StudentGroupEntity();
         groupEntity.setId(10L);
@@ -119,8 +122,9 @@ class StudentGroupServiceTest {
         @DisplayName("Should create group successfully without teachers")
         void shouldCreateGroupWithoutTeachers() {
             // Given
-            when(studentGroupRepository.existsByName("New Group")).thenReturn(false);
-            when(studentGroupRepository.save(any(StudentGroup.class))).thenReturn(studentGroup);
+            when(studentGroupJpaRepository.existsByName("New Group")).thenReturn(false);
+            when(studentGroupJpaRepository.save(any(StudentGroupEntity.class))).thenReturn(groupEntity);
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
 
             // When
             StudentGroup result = studentGroupService.createStudentGroup("New Group", "Description", null);
@@ -128,31 +132,32 @@ class StudentGroupServiceTest {
             // Then
             assertThat(result).isNotNull();
             assertThat(result.getName()).isEqualTo("Group A");
-            verify(studentGroupRepository).save(any(StudentGroup.class));
+            verify(studentGroupJpaRepository).save(any(StudentGroupEntity.class));
         }
 
         @Test
         @DisplayName("Should create group with teachers")
         void shouldCreateGroupWithTeachers() {
             // Given
-            when(studentGroupRepository.existsByName("New Group")).thenReturn(false);
+            when(studentGroupJpaRepository.existsByName("New Group")).thenReturn(false);
             when(userRepository.findById(1L)).thenReturn(Optional.of(teacherEntity));
             when(userMapper.toUser(teacherEntity)).thenReturn(teacherUser);
-            when(studentGroupRepository.save(any(StudentGroup.class))).thenReturn(studentGroup);
+            when(studentGroupJpaRepository.save(any(StudentGroupEntity.class))).thenReturn(groupEntity);
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
 
             // When
             StudentGroup result = studentGroupService.createStudentGroup("New Group", "Description", List.of(1L));
 
             // Then
             assertThat(result).isNotNull();
-            verify(studentGroupRepository).save(any(StudentGroup.class));
+            verify(studentGroupJpaRepository).save(any(StudentGroupEntity.class));
         }
 
         @Test
         @DisplayName("Should throw exception when group name already exists")
         void shouldThrowExceptionWhenGroupNameExists() {
             // Given
-            when(studentGroupRepository.existsByName("Existing Group")).thenReturn(true);
+            when(studentGroupJpaRepository.existsByName("Existing Group")).thenReturn(true);
 
             // When/Then
             assertThatThrownBy(() -> studentGroupService.createStudentGroup("Existing Group", "Desc", null))
@@ -164,7 +169,7 @@ class StudentGroupServiceTest {
         @DisplayName("Should throw exception when teacher not found")
         void shouldThrowExceptionWhenTeacherNotFound() {
             // Given
-            when(studentGroupRepository.existsByName("New Group")).thenReturn(false);
+            when(studentGroupJpaRepository.existsByName("New Group")).thenReturn(false);
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
             // When/Then
@@ -177,7 +182,7 @@ class StudentGroupServiceTest {
         @DisplayName("Should throw exception when user is not a teacher")
         void shouldThrowExceptionWhenUserIsNotTeacher() {
             // Given
-            when(studentGroupRepository.existsByName("New Group")).thenReturn(false);
+            when(studentGroupJpaRepository.existsByName("New Group")).thenReturn(false);
             when(userRepository.findById(2L)).thenReturn(Optional.of(studentEntity));
             when(userMapper.toUser(studentEntity)).thenReturn(studentUser);
 
@@ -196,7 +201,8 @@ class StudentGroupServiceTest {
         @DisplayName("Should find group by id")
         void shouldFindGroupById() {
             // Given
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
 
             // When
             StudentGroup result = studentGroupService.findById(10L);
@@ -210,7 +216,7 @@ class StudentGroupServiceTest {
         @DisplayName("Should throw exception when group not found")
         void shouldThrowExceptionWhenGroupNotFound() {
             // Given
-            when(studentGroupRepository.findById(999L)).thenReturn(Optional.empty());
+            when(studentGroupJpaRepository.findById(999L)).thenReturn(Optional.empty());
 
             // When/Then
             assertThatThrownBy(() -> studentGroupService.findById(999L))
@@ -227,24 +233,26 @@ class StudentGroupServiceTest {
         @DisplayName("Should update group name successfully")
         void shouldUpdateGroupName() {
             // Given
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
-            when(studentGroupRepository.existsByName("Updated Name")).thenReturn(false);
-            when(studentGroupRepository.save(any(StudentGroup.class))).thenReturn(studentGroup);
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
+            when(studentGroupJpaRepository.existsByName("Updated Name")).thenReturn(false);
+            when(studentGroupJpaRepository.save(any(StudentGroupEntity.class))).thenReturn(groupEntity);
 
             // When
             StudentGroup result = studentGroupService.updateStudentGroup(10L, "Updated Name", null);
 
             // Then
             assertThat(result).isNotNull();
-            verify(studentGroupRepository).save(any(StudentGroup.class));
+            verify(studentGroupJpaRepository).save(any(StudentGroupEntity.class));
         }
 
         @Test
         @DisplayName("Should throw exception when updating to existing name")
         void shouldThrowExceptionWhenUpdatingToExistingName() {
             // Given
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
-            when(studentGroupRepository.existsByName("Existing Name")).thenReturn(true);
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
+            when(studentGroupJpaRepository.existsByName("Existing Name")).thenReturn(true);
 
             // When/Then
             assertThatThrownBy(() -> studentGroupService.updateStudentGroup(10L, "Existing Name", null))
@@ -256,15 +264,16 @@ class StudentGroupServiceTest {
         @DisplayName("Should update description only")
         void shouldUpdateDescriptionOnly() {
             // Given
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
-            when(studentGroupRepository.save(any(StudentGroup.class))).thenReturn(studentGroup);
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
+            when(studentGroupJpaRepository.save(any(StudentGroupEntity.class))).thenReturn(groupEntity);
 
             // When
             StudentGroup result = studentGroupService.updateStudentGroup(10L, null, "New description");
 
             // Then
             assertThat(result).isNotNull();
-            verify(studentGroupRepository).save(any(StudentGroup.class));
+            verify(studentGroupJpaRepository).save(any(StudentGroupEntity.class));
         }
     }
 
@@ -321,17 +330,17 @@ class StudentGroupServiceTest {
             // Given — a deleted group whose former student was detached (marker = 10, no current group).
             studentEntity.setStudentGroup(null);
             studentEntity.setDeletedFromGroupId(10L);
-            when(studentGroupRepository.findDeletedById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findDeletedById(10L)).thenReturn(Optional.of(groupEntity));
             when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
             when(userRepository.findByDeletedFromGroupId(10L)).thenReturn(List.of(studentEntity));
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
 
             // When
             studentGroupService.restoreGroup(10L);
 
             // Then — group row is restored and the student is put back into it; marker is cleared
             // so a future delete/restore cycle can't double-fire.
-            verify(studentGroupRepository).restore(10L);
+            verify(studentGroupJpaRepository).restoreById(10L);
             assertThat(studentEntity.getStudentGroup()).isSameAs(groupEntity);
             assertThat(studentEntity.getDeletedFromGroupId()).isNull();
             verify(userRepository).save(studentEntity);
@@ -345,10 +354,10 @@ class StudentGroupServiceTest {
             otherGroup.setId(20L);
             studentEntity.setStudentGroup(otherGroup);
             studentEntity.setDeletedFromGroupId(10L);
-            when(studentGroupRepository.findDeletedById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findDeletedById(10L)).thenReturn(Optional.of(groupEntity));
             when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
             when(userRepository.findByDeletedFromGroupId(10L)).thenReturn(List.of(studentEntity));
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
 
             // When
             studentGroupService.restoreGroup(10L);
@@ -364,13 +373,13 @@ class StudentGroupServiceTest {
         @DisplayName("Should throw when no deleted group matches the id")
         void shouldThrowWhenDeletedGroupNotFound() {
             // Given
-            when(studentGroupRepository.findDeletedById(999L)).thenReturn(Optional.empty());
+            when(studentGroupJpaRepository.findDeletedById(999L)).thenReturn(Optional.empty());
 
             // When/Then
             assertThatThrownBy(() -> studentGroupService.restoreGroup(999L))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Deleted student group not found");
-            verify(studentGroupRepository, never()).restore(any());
+            verify(studentGroupJpaRepository, never()).restoreById(any());
         }
     }
 
@@ -382,24 +391,26 @@ class StudentGroupServiceTest {
         @DisplayName("Should add teacher to group successfully")
         void shouldAddTeacherToGroup() {
             // Given
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
             when(userRepository.findById(1L)).thenReturn(Optional.of(teacherEntity));
             when(userMapper.toUser(teacherEntity)).thenReturn(teacherUser);
-            when(studentGroupRepository.save(any(StudentGroup.class))).thenReturn(studentGroup);
+            when(studentGroupJpaRepository.save(any(StudentGroupEntity.class))).thenReturn(groupEntity);
 
             // When
             StudentGroup result = studentGroupService.addTeacherToGroup(10L, 1L);
 
             // Then
             assertThat(result).isNotNull();
-            verify(studentGroupRepository).save(any(StudentGroup.class));
+            verify(studentGroupJpaRepository).save(any(StudentGroupEntity.class));
         }
 
         @Test
         @DisplayName("Should throw exception when user is not a teacher")
         void shouldThrowExceptionWhenUserIsNotTeacher() {
             // Given
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
             when(userRepository.findById(2L)).thenReturn(Optional.of(studentEntity));
             when(userMapper.toUser(studentEntity)).thenReturn(studentUser);
 
@@ -414,7 +425,8 @@ class StudentGroupServiceTest {
         void shouldThrowExceptionWhenTeacherAlreadyInGroup() {
             // Given
             studentGroup.getTeachers().add(teacherUser);
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
             when(userRepository.findById(1L)).thenReturn(Optional.of(teacherEntity));
             when(userMapper.toUser(teacherEntity)).thenReturn(teacherUser);
 
@@ -434,24 +446,26 @@ class StudentGroupServiceTest {
         void shouldRemoveTeacherFromGroup() {
             // Given
             studentGroup.getTeachers().add(teacherUser);
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
             when(userRepository.findById(1L)).thenReturn(Optional.of(teacherEntity));
             when(userMapper.toUser(teacherEntity)).thenReturn(teacherUser);
-            when(studentGroupRepository.save(any(StudentGroup.class))).thenReturn(studentGroup);
+            when(studentGroupJpaRepository.save(any(StudentGroupEntity.class))).thenReturn(groupEntity);
 
             // When
             StudentGroup result = studentGroupService.removeTeacherFromGroup(10L, 1L);
 
             // Then
             assertThat(result).isNotNull();
-            verify(studentGroupRepository).save(any(StudentGroup.class));
+            verify(studentGroupJpaRepository).save(any(StudentGroupEntity.class));
         }
 
         @Test
         @DisplayName("Should throw exception when teacher not in group")
         void shouldThrowExceptionWhenTeacherNotInGroup() {
             // Given
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
             when(userRepository.findById(1L)).thenReturn(Optional.of(teacherEntity));
             when(userMapper.toUser(teacherEntity)).thenReturn(teacherUser);
 
@@ -470,9 +484,9 @@ class StudentGroupServiceTest {
         @DisplayName("Should add student to group successfully")
         void shouldAddStudentToGroup() {
             // Given
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
-            when(userRepository.findById(2L)).thenReturn(Optional.of(studentEntity));
             when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
+            when(userRepository.findById(2L)).thenReturn(Optional.of(studentEntity));
             when(userRepository.save(any(UserEntity.class))).thenReturn(studentEntity);
 
             // When
@@ -487,7 +501,8 @@ class StudentGroupServiceTest {
         @DisplayName("Should throw exception when user is not a student")
         void shouldThrowExceptionWhenUserIsNotStudent() {
             // Given
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
             when(userRepository.findById(1L)).thenReturn(Optional.of(teacherEntity));
 
             // When/Then
@@ -501,7 +516,8 @@ class StudentGroupServiceTest {
         void shouldThrowExceptionWhenStudentAlreadyInThisGroup() {
             // Given
             studentEntity.setStudentGroup(groupEntity);
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
             when(userRepository.findById(2L)).thenReturn(Optional.of(studentEntity));
 
             // When/Then
@@ -519,7 +535,8 @@ class StudentGroupServiceTest {
             anotherGroup.setName("Group B");
             studentEntity.setStudentGroup(anotherGroup);
 
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
             when(userRepository.findById(2L)).thenReturn(Optional.of(studentEntity));
 
             // When/Then
@@ -538,10 +555,10 @@ class StudentGroupServiceTest {
         void shouldAddMultipleStudentsToGroup() {
             // Given
             when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
             when(userRepository.findById(2L)).thenReturn(Optional.of(studentEntity));
             when(userRepository.findById(3L)).thenReturn(Optional.of(anotherStudentEntity));
             when(userRepository.save(any(UserEntity.class))).thenAnswer(i -> i.getArgument(0));
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
 
             // When
             StudentGroup result = studentGroupService.addStudentsToGroup(10L, List.of(2L, 3L));
@@ -557,10 +574,10 @@ class StudentGroupServiceTest {
             // Given
             studentEntity.setStudentGroup(groupEntity);
             when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
             when(userRepository.findById(2L)).thenReturn(Optional.of(studentEntity));
             when(userRepository.findById(3L)).thenReturn(Optional.of(anotherStudentEntity));
             when(userRepository.save(any(UserEntity.class))).thenAnswer(i -> i.getArgument(0));
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
 
             // When
             StudentGroup result = studentGroupService.addStudentsToGroup(10L, List.of(2L, 3L));
@@ -582,7 +599,8 @@ class StudentGroupServiceTest {
             studentEntity.setStudentGroup(groupEntity);
             when(userRepository.findById(2L)).thenReturn(Optional.of(studentEntity));
             when(userRepository.save(any(UserEntity.class))).thenReturn(studentEntity);
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
 
             // When
             StudentGroup result = studentGroupService.removeStudentFromGroup(10L, 2L);
@@ -630,7 +648,8 @@ class StudentGroupServiceTest {
         void shouldGetGroupStudents() {
             // Given
             studentGroup.getStudents().add(studentUser);
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
 
             // When
             List<User> result = studentGroupService.getGroupStudents(10L);
@@ -645,7 +664,8 @@ class StudentGroupServiceTest {
         void shouldGetGroupTeachers() {
             // Given
             studentGroup.getTeachers().add(teacherUser);
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
 
             // When
             List<User> result = studentGroupService.getGroupTeachers(10L);
@@ -659,7 +679,8 @@ class StudentGroupServiceTest {
         @DisplayName("Should return empty list when no students")
         void shouldReturnEmptyListWhenNoStudents() {
             // Given
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
 
             // When
             List<User> result = studentGroupService.getGroupStudents(10L);
@@ -678,7 +699,8 @@ class StudentGroupServiceTest {
         void shouldReturnTrueWhenStudentInGroup() {
             // Given
             studentGroup.getStudents().add(studentUser);
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
             when(userRepository.findById(2L)).thenReturn(Optional.of(studentEntity));
             when(userMapper.toUser(studentEntity)).thenReturn(studentUser);
 
@@ -693,7 +715,8 @@ class StudentGroupServiceTest {
         @DisplayName("Should return false when student is not in group")
         void shouldReturnFalseWhenStudentNotInGroup() {
             // Given
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
             when(userRepository.findById(2L)).thenReturn(Optional.of(studentEntity));
             when(userMapper.toUser(studentEntity)).thenReturn(studentUser);
 
@@ -715,7 +738,8 @@ class StudentGroupServiceTest {
             // Given
             studentGroup.getStudents().add(studentUser);
             studentGroup.getStudents().add(User.builder().username("student2").build());
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
 
             // When
             int result = studentGroupService.getGroupStudentCount(10L);
@@ -728,7 +752,8 @@ class StudentGroupServiceTest {
         @DisplayName("Should return zero when no students")
         void shouldReturnZeroWhenNoStudents() {
             // Given
-            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(studentGroupMapper.toDomain(groupEntity)).thenReturn(studentGroup);
 
             // When
             int result = studentGroupService.getGroupStudentCount(10L);

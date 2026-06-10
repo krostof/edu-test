@@ -359,14 +359,17 @@ public class AnswerSubmissionService {
                 .isGraded(answer.getIsGraded())
                 .teacherFeedback(answer.getTeacherFeedback());
 
-        if (answer instanceof SingleChoiceAnswerEntity singleChoice) {
-            builder.selectedOptionId(singleChoice.getSelectedOptionId());
-        } else if (answer instanceof MultipleChoiceAnswerEntity multipleChoice) {
-            builder.selectedOptionIds(multipleChoice.getSelectedOptionIds());
-        } else if (answer instanceof OpenQuestionAnswerEntity openQuestion) {
-            builder.answerText(openQuestion.getAnswerText());
-            builder.wordCount(openQuestion.getWordCount());
-            builder.characterCount(openQuestion.getCharacterCount());
+        switch (answer) {
+            case SingleChoiceAnswerEntity singleChoice -> builder.selectedOptionId(singleChoice.getSelectedOptionId());
+            case MultipleChoiceAnswerEntity multipleChoice ->
+                    builder.selectedOptionIds(multipleChoice.getSelectedOptionIds());
+            case OpenQuestionAnswerEntity openQuestion -> {
+                builder.answerText(openQuestion.getAnswerText());
+                builder.wordCount(openQuestion.getWordCount());
+                builder.characterCount(openQuestion.getCharacterCount());
+            }
+            default -> {
+            }
         }
 
         return builder.build();

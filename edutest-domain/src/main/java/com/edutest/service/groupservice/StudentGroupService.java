@@ -3,9 +3,9 @@ package com.edutest.service.groupservice;
 import com.edutest.domain.group.StudentGroup;
 import com.edutest.persistance.entity.user.UserEntity;
 import com.edutest.persistance.repository.StudentGroupJpaRepository;
-import com.edutest.persistance.repository.StudentGroupRepository;
 import com.edutest.domain.user.User;
 import com.edutest.persistance.repository.UserRepository;
+import com.edutest.util.StudentGroupMapper;
 import com.edutest.util.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,15 +26,15 @@ import java.util.Optional;
 @Transactional
 public class StudentGroupService {
 
-    private final StudentGroupRepository studentGroupRepository;
     private final StudentGroupJpaRepository studentGroupJpaRepository;
+    private final StudentGroupMapper studentGroupMapper;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
     public StudentGroup createStudentGroup(String name, String description, List<Long> teacherIds) {
         log.info("Creating student group: name={}, description={}, teacherIds={}", name, description, teacherIds);
 
-        if (studentGroupRepository.existsByName(name)) {
+        if (studentGroupJpaRepository.existsByName(name)) {
             throw new IllegalArgumentException("Group with name '" + name + "' already exists");
         }
 
@@ -58,7 +58,7 @@ public class StudentGroupService {
                 .teachers(teachers)
                 .build();
 
-        StudentGroup savedGroup = studentGroupRepository.save(studentGroup);
+        StudentGroup savedGroup = persistStudentGroup(studentGroup);
         log.info("Group created successfully with id={}", savedGroup.getId());
 
         return savedGroup;
@@ -67,50 +67,54 @@ public class StudentGroupService {
     @Transactional(readOnly = true)
     public StudentGroup findById(Long id) {
         log.debug("Finding student group by id: {}", id);
-        return studentGroupRepository.findById(id)
+        return studentGroupJpaRepository.findById(id)
+                .map(studentGroupMapper::toDomain)
                 .orElseThrow(() -> new IllegalArgumentException("Student group not found with id: " + id));
     }
 
     @Transactional(readOnly = true)
     public List<StudentGroup> findByTeacher(Long teacherId) {
         log.debug("Finding student groups by teacher id: {}", teacherId);
-        User teacher = userRepository.findById(teacherId)
-                .map(userMapper::toUser)
+        UserEntity teacher = userRepository.findById(teacherId)
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found with id: " + teacherId));
 
-        return studentGroupRepository.findByTeacher(teacher);
+        return studentGroupJpaRepository.findByTeacher(teacher).stream()
+                .map(studentGroupMapper::toDomain)
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public Optional<StudentGroup> findByStudent(Long studentId) {
         log.debug("Finding student group by student id: {}", studentId);
-        User student = userRepository.findById(studentId)
-                .map(userMapper::toUser)
+        UserEntity student = userRepository.findById(studentId)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found with id: " + studentId));
 
-        return studentGroupRepository.findByStudent(student);
+        return studentGroupJpaRepository.findByStudent(student)
+                .map(studentGroupMapper::toDomain);
     }
 
     @Transactional(readOnly = true)
     public Page<StudentGroup> findAll(Pageable pageable) {
         log.debug("Finding all student groups with pagination");
-        return studentGroupRepository.findAll(pageable);
+        return studentGroupJpaRepository.findAll(pageable)
+                .map(studentGroupMapper::toDomain);
     }
 
     @Transactional(readOnly = true)
     public Page<StudentGroup> findByTeacher(Long teacherId, Pageable pageable) {
         log.debug("Finding student groups by teacher id: {} with pagination", teacherId);
-        User teacher = userRepository.findById(teacherId)
-                .map(userMapper::toUser)
+        UserEntity teacher = userRepository.findById(teacherId)
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found with id: " + teacherId));
 
-        return studentGroupRepository.findByTeacher(teacher, pageable);
+        return studentGroupJpaRepository.findByTeacher(teacher, pageable)
+                .map(studentGroupMapper::toDomain);
     }
 
     @Transactional(readOnly = true)
     public Page<StudentGroup> searchGroups(String searchTerm, Pageable pageable) {
         log.debug("Searching student groups with term: {}", searchTerm);
-        return studentGroupRepository.findByNameOrDescriptionContaining(searchTerm, pageable);
+        return studentGroupJpaRepository.findByNameOrDescriptionContaining(searchTerm, pageable)
+                .map(studentGroupMapper::toDomain);
     }
 
     public StudentGroup updateStudentGroup(Long id, String name, String description) {
@@ -119,7 +123,7 @@ public class StudentGroupService {
         StudentGroup existingGroup = findById(id);
 
         if (name != null && !name.equals(existingGroup.getName())) {
-            if (studentGroupRepository.existsByName(name)) {
+            if (studentGroupJpaRepository.existsByName(name)) {
                 throw new IllegalArgumentException("Group with name '" + name + "' already exists");
             }
             existingGroup.setName(name);
@@ -129,7 +133,7 @@ public class StudentGroupService {
             existingGroup.setDescription(description);
         }
 
-        StudentGroup updatedGroup = studentGroupRepository.save(existingGroup);
+        StudentGroup updatedGroup = persistStudentGroup(existingGroup);
         log.info("Group updated successfully with id={}", updatedGroup.getId());
 
         return updatedGroup;
@@ -162,16 +166,19 @@ public class StudentGroupService {
     @Transactional(readOnly = true)
     public List<StudentGroup> getDeletedGroups() {
         log.debug("Listing soft-deleted student groups");
-        return studentGroupRepository.findAllDeleted();
+        return studentGroupJpaRepository.findAllDeleted().stream()
+                .map(studentGroupMapper::toDomain)
+                .toList();
     }
 
     @Transactional
     public StudentGroup restoreGroup(Long id) {
         log.info("Restoring student group with id: {}", id);
-        StudentGroup group = studentGroupRepository.findDeletedById(id)
+        StudentGroup group = studentGroupJpaRepository.findDeletedById(id)
+                .map(studentGroupMapper::toDomain)
                 .orElseThrow(() -> new IllegalArgumentException("Deleted student group not found with id: " + id));
 
-        studentGroupRepository.restore(id);
+        studentGroupJpaRepository.restoreById(id);
 
         // Re-attach students detached on deletion, but skip anyone who has since joined another
         // group (their current membership wins). Clear the marker either way so it can't re-fire.
@@ -193,7 +200,9 @@ public class StudentGroupService {
                 id, reattached, formerMembers.size());
 
         // Reload so the response reflects the re-attached members (count, list).
-        return studentGroupRepository.findById(id).orElse(group);
+        return studentGroupJpaRepository.findById(id)
+                .map(studentGroupMapper::toDomain)
+                .orElse(group);
     }
 
     // Teacher management
@@ -214,7 +223,7 @@ public class StudentGroupService {
         }
 
         group.addTeacher(teacher);
-        StudentGroup updatedGroup = studentGroupRepository.save(group);
+        StudentGroup updatedGroup = persistStudentGroup(group);
 
         log.info("Teacher {} added to group {} successfully", teacherId, groupId);
         return updatedGroup;
@@ -233,7 +242,7 @@ public class StudentGroupService {
         }
 
         group.removeTeacher(teacher);
-        StudentGroup updatedGroup = studentGroupRepository.save(group);
+        StudentGroup updatedGroup = persistStudentGroup(group);
 
         log.info("Teacher {} removed from group {} successfully", teacherId, groupId);
         return updatedGroup;
@@ -351,5 +360,29 @@ public class StudentGroupService {
                 .orElseThrow(() -> new IllegalArgumentException("Student not found with id: " + studentId));
 
         return group.containsStudent(student);
+    }
+
+    private StudentGroup persistStudentGroup(StudentGroup studentGroup) {
+        StudentGroupEntity entity = studentGroup.getId() != null
+                ? studentGroupJpaRepository.findById(studentGroup.getId()).orElseGet(StudentGroupEntity::new)
+                : new StudentGroupEntity();
+
+        entity.setName(studentGroup.getName());
+        entity.setDescription(studentGroup.getDescription());
+        if (studentGroup.getId() != null) {
+            entity.setId(studentGroup.getId());
+        }
+
+        List<UserEntity> teacherEntities = new ArrayList<>();
+        for (User teacher : studentGroup.getTeachers()) {
+            UserEntity teacherEntity = userRepository.findById(teacher.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Teacher not found: " + teacher.getId()));
+            teacherEntities.add(teacherEntity);
+        }
+        entity.getTeachers().clear();
+        entity.getTeachers().addAll(teacherEntities);
+
+        StudentGroupEntity savedEntity = studentGroupJpaRepository.save(entity);
+        return studentGroupMapper.toDomain(savedEntity);
     }
 }
