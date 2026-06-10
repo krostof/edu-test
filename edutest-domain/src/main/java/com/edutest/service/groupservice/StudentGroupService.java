@@ -157,6 +157,23 @@ public class StudentGroupService {
         log.info("Student group {} soft-deleted successfully ({} students detached)", id, students.size());
     }
 
+    @Transactional(readOnly = true)
+    public List<StudentGroup> getDeletedGroups() {
+        log.debug("Listing soft-deleted student groups");
+        return studentGroupRepository.findAllDeleted();
+    }
+
+    @Transactional
+    public StudentGroup restoreGroup(Long id) {
+        log.info("Restoring student group with id: {}", id);
+        StudentGroup group = studentGroupRepository.findDeletedById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Deleted student group not found with id: " + id));
+
+        studentGroupRepository.restore(id);
+        log.info("Student group {} restored successfully (students detached on deletion are not re-added)", id);
+        return group;
+    }
+
     // Teacher management
     public StudentGroup addTeacherToGroup(Long groupId, Long teacherId) {
         log.info("Adding teacher {} to group {}", teacherId, groupId);

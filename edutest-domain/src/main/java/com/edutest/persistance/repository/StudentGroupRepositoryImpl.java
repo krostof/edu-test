@@ -119,6 +119,25 @@ public class StudentGroupRepositoryImpl implements StudentGroupRepository {
         jpaRepository.deleteById(id);
     }
 
+    @Override
+    public List<StudentGroup> findAllDeleted() {
+        return jpaRepository.findAllDeleted()
+                .stream()
+                .map(this::mapToDomain)
+                .toList();
+    }
+
+    @Override
+    public Optional<StudentGroup> findDeletedById(Long id) {
+        return jpaRepository.findDeletedById(id)
+                .map(this::mapToDomain);
+    }
+
+    @Override
+    public void restore(Long id) {
+        jpaRepository.restoreById(id);
+    }
+
     private StudentGroup mapToDomain(StudentGroupEntity entity) {
         List<User> teachers = new ArrayList<>();
         if (entity.getTeachers() != null) {

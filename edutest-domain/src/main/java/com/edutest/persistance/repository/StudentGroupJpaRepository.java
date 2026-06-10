@@ -42,4 +42,16 @@ public interface StudentGroupJpaRepository extends JpaRepository<StudentGroupEnt
     @Modifying
     @Query(value = "DELETE FROM test_groups WHERE group_id = :groupId", nativeQuery = true)
     void removeGroupFromAllTests(@Param("groupId") Long groupId);
+
+    // Soft-delete restore support. Native SQL bypasses @SQLRestriction so these can see/restore
+    // deleted groups (every JPQL/find path hides them).
+    @Query(value = "SELECT * FROM student_groups WHERE deleted_at IS NOT NULL", nativeQuery = true)
+    List<StudentGroupEntity> findAllDeleted();
+
+    @Query(value = "SELECT * FROM student_groups WHERE id = :id AND deleted_at IS NOT NULL", nativeQuery = true)
+    Optional<StudentGroupEntity> findDeletedById(@Param("id") Long id);
+
+    @Modifying
+    @Query(value = "UPDATE student_groups SET deleted_at = NULL WHERE id = :id", nativeQuery = true)
+    void restoreById(@Param("id") Long id);
 }

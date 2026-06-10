@@ -193,6 +193,25 @@ public class UserManagementService {
         log.info("User {} soft-deleted successfully", userId);
     }
 
+    @Transactional(readOnly = true)
+    public List<UserProfile> getDeletedUsers() {
+        log.info("Listing soft-deleted users");
+        return userRepository.findAllDeleted().stream()
+                .map(userMapper::toUserProfile)
+                .toList();
+    }
+
+    @Transactional
+    public UserProfile restoreUser(Long userId) {
+        log.info("Restoring user with id: {}", userId);
+        UserEntity user = userRepository.findDeletedById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Deleted user not found with id: " + userId));
+
+        userRepository.restoreById(userId);
+        log.info("User {} restored successfully", userId);
+        return userMapper.toUserProfile(user);
+    }
+
     @Transactional
     public BatchOperationResult batchDeactivateUsers(List<Long> userIds) {
         log.info("Starting batch deactivation for {} users", userIds.size());

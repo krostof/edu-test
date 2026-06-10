@@ -93,6 +93,24 @@ public class GroupsApiController implements GroupsApi {
         return ResponseEntity.noContent().build();
     }
 
+    @Override
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<com.edutest.api.model.StudentGroup>> getDeletedGroups() {
+        log.info("Listing deleted groups");
+        List<com.edutest.api.model.StudentGroup> result = studentGroupService.getDeletedGroups().stream()
+                .map(this::toApiStudentGroup)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
+    @Override
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<com.edutest.api.model.StudentGroup> restoreGroup(Long groupId) {
+        log.info("Restoring group with id={}", groupId);
+        StudentGroup restored = studentGroupService.restoreGroup(groupId);
+        return ResponseEntity.ok(toApiStudentGroup(restored));
+    }
+
     // Teacher management
     @Override
     @PreAuthorize("hasRole('ADMIN')")

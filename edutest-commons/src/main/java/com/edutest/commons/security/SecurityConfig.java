@@ -122,6 +122,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/groups/*/teachers").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/groups/*/students").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/groups/*/students/batch").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/groups/deleted").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/groups/*/restore").hasAuthority("ROLE_ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

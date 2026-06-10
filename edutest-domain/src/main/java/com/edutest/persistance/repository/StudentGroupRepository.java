@@ -33,4 +33,10 @@ public interface StudentGroupRepository {
     boolean existsById(Long id);
 
     void deleteById(Long id);
+
+    List<StudentGroup> findAllDeleted();
+
+    Optional<StudentGroup> findDeletedById(Long id);
+
+    void restore(Long id);
 }

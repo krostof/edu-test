@@ -373,6 +373,55 @@ paths:
         '403':
           description: Access denied - admin role required
 
+  /admin/users/deleted:
+    get:
+      tags:
+        - Admin
+      summary: List deleted users
+      description: List soft-deleted user accounts that can be restored (admin only)
+      operationId: getDeletedUsers
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Deleted users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserProfile'
+        '403':
+          description: Access denied - admin role required
+
+  /admin/users/{userId}/restore:
+    post:
+      tags:
+        - Admin
+      summary: Restore deleted user
+      description: Restore a soft-deleted user account (admin only)
+      operationId: restoreUser
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: User restored successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '404':
+          description: Deleted user not found
+        '403':
+          description: Access denied - admin role required
+
   /admin/users/batch-deactivate:
     post:
       tags:
@@ -546,6 +595,57 @@ paths:
           description: Group deleted successfully
         '404':
           description: Group not found
+        '403':
+          description: Access denied - admin role required
+
+  /groups/deleted:
+    get:
+      tags:
+        - Groups
+      summary: List deleted groups
+      description: List soft-deleted student groups that can be restored (admin only)
+      operationId: getDeletedGroups
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Deleted groups retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudentGroup'
+        '403':
+          description: Access denied - admin role required
+
+  /groups/{groupId}/restore:
+    post:
+      tags:
+        - Groups
+      summary: Restore deleted group
+      description: >-
+        Restore a soft-deleted student group (admin only). Students that were
+        detached when the group was deleted are not re-added automatically.
+      operationId: restoreGroup
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Group restored successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentGroup'
+        '404':
+          description: Deleted group not found
         '403':
           description: Access denied - admin role required
 

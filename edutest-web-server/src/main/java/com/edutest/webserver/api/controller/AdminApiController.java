@@ -67,6 +67,20 @@ public class AdminApiController implements AdminApi {
     }
 
     @Override
+    public ResponseEntity<java.util.List<UserProfile>> getDeletedUsers() {
+        log.info("Listing deleted users");
+        return ResponseEntity.ok(userManagementService.getDeletedUsers());
+    }
+
+    @Override
+    public ResponseEntity<UserProfile> restoreUser(Long userId) {
+        log.info("Restoring user: {}", userId);
+        UserProfile restored = userManagementService.restoreUser(userId);
+        log.info("User {} restored successfully", userId);
+        return ResponseEntity.ok(restored);
+    }
+
+    @Override
     public ResponseEntity<UserProfile> activateUser(Long userId) {
         log.info("Activating user: {}", userId);
         UserProfile activatedUser = userManagementService.activateUser(userId);

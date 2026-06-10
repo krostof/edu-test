@@ -318,6 +318,58 @@ class GroupsApiControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Nested
+    @DisplayName("Group restore (soft delete)")
+    class RestoreGroupTests {
+
+        @Test
+        @DisplayName("Admin should restore a soft-deleted group round-trip")
+        void adminShouldRestoreGroup() throws Exception {
+            String token = loginAndGetToken(ADMIN_USERNAME);
+            String auth = "Bearer " + token;
+            Long id = testGroup.getId();
+
+            // Soft-delete hides the group (app maps "not found" group lookups to 400).
+            mockMvc.perform(delete("/api/groups/" + id).header("Authorization", auth))
+                    .andExpect(status().isNoContent());
+            mockMvc.perform(get("/api/groups/" + id).header("Authorization", auth))
+                    .andExpect(status().isBadRequest());
+
+            // It appears in the deleted list...
+            mockMvc.perform(get("/api/groups/deleted").header("Authorization", auth))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[?(@.id == " + id + ")]").exists());
+
+            // ...and restore brings it back.
+            mockMvc.perform(post("/api/groups/" + id + "/restore").header("Authorization", auth))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(id.intValue()));
+            mockMvc.perform(get("/api/groups/" + id).header("Authorization", auth))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("Restoring a group that is not soft-deleted returns 400")
+        void restoreNonDeletedGroupReturns400() throws Exception {
+            String token = loginAndGetToken(ADMIN_USERNAME);
+            mockMvc.perform(post("/api/groups/" + testGroup.getId() + "/restore")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("Non-admin cannot restore or list deleted groups (403)")
+        void nonAdminForbidden() throws Exception {
+            String token = loginAndGetToken(TEACHER_USERNAME);
+            mockMvc.perform(post("/api/groups/" + testGroup.getId() + "/restore")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isForbidden());
+            mockMvc.perform(get("/api/groups/deleted")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isForbidden());
+        }
+    }
+
+    @Nested
     @DisplayName("Teacher management")
     class TeacherManagementTests {
 

@@ -6,6 +6,7 @@ import com.edutest.persistance.entity.user.UserEntityRole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -61,4 +62,16 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     @Query("SELECT u FROM UserEntity u JOIN u.roles r WHERE u.studentGroup IS NULL AND r = 'STUDENT'")
     List<UserEntity> findStudentsWithoutGroup();
+
+    // Soft-delete restore support. Native SQL bypasses @SQLRestriction (which always hides
+    // deleted_at IS NOT NULL rows), so these are the only way to see/restore deleted users.
+    @Query(value = "SELECT * FROM users WHERE deleted_at IS NOT NULL", nativeQuery = true)
+    List<UserEntity> findAllDeleted();
+
+    @Query(value = "SELECT * FROM users WHERE id = :id AND deleted_at IS NOT NULL", nativeQuery = true)
+    Optional<UserEntity> findDeletedById(@Param("id") Long id);
+
+    @Modifying
+    @Query(value = "UPDATE users SET deleted_at = NULL WHERE id = :id", nativeQuery = true)
+    void restoreById(@Param("id") Long id);
 }

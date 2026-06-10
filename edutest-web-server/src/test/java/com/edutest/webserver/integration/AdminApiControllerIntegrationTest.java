@@ -324,6 +324,67 @@ class AdminApiControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Nested
+    @DisplayName("User restore (soft delete)")
+    class RestoreUserTests {
+
+        @Test
+        @DisplayName("Admin should restore a soft-deleted user round-trip")
+        void adminShouldRestoreUser() throws Exception {
+            UserEntity toDelete = userRepository.save(UserEntity.builder()
+                    .username("torestore")
+                    .email("torestore@test.com")
+                    .password(passwordEncoder.encode(DEFAULT_PASSWORD))
+                    .firstName("To")
+                    .lastName("Restore")
+                    .roles(new HashSet<>(Set.of(UserEntityRole.STUDENT)))
+                    .isActive(true)
+                    .build());
+            String token = loginAndGetToken(ADMIN_USERNAME);
+            String auth = "Bearer " + token;
+
+            // Soft-delete hides the user from detail lookups...
+            mockMvc.perform(delete("/api/admin/users/" + toDelete.getId()).header("Authorization", auth))
+                    .andExpect(status().isNoContent());
+            mockMvc.perform(get("/api/admin/users/" + toDelete.getId()).header("Authorization", auth))
+                    .andExpect(status().isNotFound());
+
+            // ...but it shows up in the deleted list, which is the source for the restore UI.
+            mockMvc.perform(get("/api/admin/users/deleted").header("Authorization", auth))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[?(@.id == " + toDelete.getId() + ")]").exists());
+
+            // Restore brings it back.
+            mockMvc.perform(post("/api/admin/users/" + toDelete.getId() + "/restore").header("Authorization", auth))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(toDelete.getId().intValue()))
+                    .andExpect(jsonPath("$.username").value("torestore"));
+            mockMvc.perform(get("/api/admin/users/" + toDelete.getId()).header("Authorization", auth))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("Restoring a user that is not soft-deleted returns 404")
+        void restoreNonDeletedUserReturns404() throws Exception {
+            String token = loginAndGetToken(ADMIN_USERNAME);
+            mockMvc.perform(post("/api/admin/users/" + studentUser.getId() + "/restore")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("Non-admin cannot restore or list deleted users (403)")
+        void nonAdminForbidden() throws Exception {
+            String token = loginAndGetToken(TEACHER_USERNAME);
+            mockMvc.perform(post("/api/admin/users/" + studentUser.getId() + "/restore")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isForbidden());
+            mockMvc.perform(get("/api/admin/users/deleted")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isForbidden());
+        }
+    }
+
+    @Nested
     @DisplayName("POST /api/admin/users/{userId}/activate and /deactivate")
     class ActivateDeactivateTests {
 
