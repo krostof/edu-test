@@ -95,7 +95,7 @@ class UserManagementServiceTest {
             // When/Then — the guard must trip before any state change.
             assertThatThrownBy(() -> userManagementService.deleteUserWithValidation(1L))
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("3 group(s)");
+                    .hasMessageContaining("grupy (3)");
             assertThat(teacher.getDeletedAt()).isNull();
             verify(userRepository, never()).save(any());
         }
@@ -128,7 +128,7 @@ class UserManagementServiceTest {
             // When/Then — soft-deleting would dangle the attempt's student reference, so it is blocked.
             assertThatThrownBy(() -> userManagementService.deleteUserWithValidation(2L))
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("5 test attempt(s)");
+                    .hasMessageContaining("podejścia do testów (5)");
             assertThat(student.getDeletedAt()).isNull();
             verify(userRepository, never()).save(any());
         }
@@ -147,7 +147,7 @@ class UserManagementServiceTest {
             // When/Then
             assertThatThrownBy(() -> userManagementService.deleteUserWithValidation(1L))
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("2 test(s)");
+                    .hasMessageContaining("autorem testów (2)");
             assertThat(teacher.getDeletedAt()).isNull();
             verify(userRepository, never()).save(any());
         }
@@ -248,7 +248,7 @@ class UserManagementServiceTest {
             assertThat(result.getSuccessCount()).isEqualTo(1);
             assertThat(result.getFailedCount()).isEqualTo(1);
             assertThat(result.getErrors()).hasSize(1);
-            assertThat(result.getErrors().get(0)).contains("User ID 1").contains("group(s)");
+            assertThat(result.getErrors().get(0)).contains("User ID 1").contains("grupy");
             assertThat(student.getDeletedAt()).isNotNull();
             assertThat(teacher.getDeletedAt()).isNull();
             verify(userRepository).save(student);

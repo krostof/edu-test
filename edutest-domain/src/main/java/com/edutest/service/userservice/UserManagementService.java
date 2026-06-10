@@ -163,7 +163,7 @@ public class UserManagementService {
             if (groupCount > 0) {
                 log.warn("Cannot delete teacher {} - has {} groups assigned", userId, groupCount);
                 throw new IllegalStateException(
-                    String.format("Cannot delete teacher - has %d group(s) assigned. Please reassign or delete groups first.", groupCount)
+                    String.format("Nie można usunąć nauczyciela — ma przypisane grupy (%d). Najpierw przepnij lub usuń grupy.", groupCount)
                 );
             }
 
@@ -171,7 +171,7 @@ public class UserManagementService {
             if (testCount > 0) {
                 log.warn("Cannot delete teacher {} - authored {} test(s)", userId, testCount);
                 throw new IllegalStateException(
-                    String.format("Cannot delete teacher - is the author of %d test(s). Deactivate the account instead to preserve test history.", testCount)
+                    String.format("Nie można usunąć nauczyciela — jest autorem testów (%d). Zamiast tego dezaktywuj konto, aby zachować historię testów.", testCount)
                 );
             }
         }
@@ -180,7 +180,7 @@ public class UserManagementService {
         if (attemptCount > 0) {
             log.warn("Cannot delete user {} - has {} test attempt(s)", userId, attemptCount);
             throw new IllegalStateException(
-                String.format("Cannot delete user - has %d test attempt(s). Deactivate the account instead to preserve attempt history.", attemptCount)
+                String.format("Nie można usunąć użytkownika — ma podejścia do testów (%d). Zamiast tego dezaktywuj konto, aby zachować historię podejść.", attemptCount)
             );
         }
 

@@ -49,6 +49,12 @@ public class UserEntity extends BaseEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    // Set to the group's id when that group is soft-deleted and this student is detached.
+    // restoreGroup uses it to re-attach still-group-less students; cleared on re-attach or
+    // when the student joins any group. Soft reference (no FK) — the group may be deleted.
+    @Column(name = "deleted_from_group_id")
+    private Long deletedFromGroupId;
+
     @Column(name = "student_number", length = 20)
     private String studentNumber;
 

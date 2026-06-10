@@ -625,8 +625,9 @@ paths:
         - Groups
       summary: Restore deleted group
       description: >-
-        Restore a soft-deleted student group (admin only). Students that were
-        detached when the group was deleted are not re-added automatically.
+        Restore a soft-deleted student group (admin only). Students detached on
+        deletion are re-added, except those who have since joined another group.
+        Test assignments (test_groups) are not restored.
       operationId: restoreGroup
       security:
         - BearerAuth: []

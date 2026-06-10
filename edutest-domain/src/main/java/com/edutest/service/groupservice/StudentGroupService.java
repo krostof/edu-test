@@ -141,10 +141,12 @@ public class StudentGroupService {
         StudentGroupEntity group = studentGroupJpaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Student group not found with id: " + id));
 
-        // Detach students so they return to the "no group" pool (frees up the student_group_id FK).
+        // Detach students so they return to the "no group" pool (frees up the student_group_id FK),
+        // but stamp deletedFromGroupId so restoreGroup can put the still-group-less ones back.
         List<UserEntity> students = userRepository.findStudentsByGroupId(id);
         for (UserEntity student : students) {
             student.setStudentGroup(null);
+            student.setDeletedFromGroupId(id);
             userRepository.save(student);
         }
 
@@ -170,8 +172,28 @@ public class StudentGroupService {
                 .orElseThrow(() -> new IllegalArgumentException("Deleted student group not found with id: " + id));
 
         studentGroupRepository.restore(id);
-        log.info("Student group {} restored successfully (students detached on deletion are not re-added)", id);
-        return group;
+
+        // Re-attach students detached on deletion, but skip anyone who has since joined another
+        // group (their current membership wins). Clear the marker either way so it can't re-fire.
+        // Test-assignment links (test_groups) are intentionally NOT restored: the teacher may have
+        // restructured the test while the group was gone — re-injecting it silently would surprise.
+        StudentGroupEntity groupEntity = studentGroupJpaRepository.findById(id)
+                .orElseThrow(() -> new IllegalStateException("Group not visible after restore: " + id));
+        List<UserEntity> formerMembers = userRepository.findByDeletedFromGroupId(id);
+        int reattached = 0;
+        for (UserEntity student : formerMembers) {
+            if (student.getStudentGroup() == null) {
+                student.setStudentGroup(groupEntity);
+                reattached++;
+            }
+            student.setDeletedFromGroupId(null);
+            userRepository.save(student);
+        }
+        log.info("Student group {} restored: {} of {} former students re-attached",
+                id, reattached, formerMembers.size());
+
+        // Reload so the response reflects the re-attached members (count, list).
+        return studentGroupRepository.findById(id).orElse(group);
     }
 
     // Teacher management

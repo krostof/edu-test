@@ -288,8 +288,10 @@ class StudentGroupServiceTest {
             verify(studentGroupJpaRepository).save(groupEntity);
             verify(studentGroupJpaRepository, never()).deleteById(any());
 
-            // The student is detached so they return to the "no group" pool.
+            // The student is detached so they return to the "no group" pool, but the former group
+            // is stamped so restoreGroup can put them back.
             assertThat(studentEntity.getStudentGroup()).isNull();
+            assertThat(studentEntity.getDeletedFromGroupId()).isEqualTo(10L);
             verify(userRepository).save(studentEntity);
 
             // Assignment links to any test are removed.
@@ -306,6 +308,69 @@ class StudentGroupServiceTest {
             assertThatThrownBy(() -> studentGroupService.deleteStudentGroup(999L))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Student group not found");
+        }
+    }
+
+    @Nested
+    @DisplayName("restoreGroup tests")
+    class RestoreGroupTests {
+
+        @Test
+        @DisplayName("Should re-attach a former student who is still group-less and clear the marker")
+        void shouldReattachStillGrouplessStudent() {
+            // Given — a deleted group whose former student was detached (marker = 10, no current group).
+            studentEntity.setStudentGroup(null);
+            studentEntity.setDeletedFromGroupId(10L);
+            when(studentGroupRepository.findDeletedById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(userRepository.findByDeletedFromGroupId(10L)).thenReturn(List.of(studentEntity));
+            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+
+            // When
+            studentGroupService.restoreGroup(10L);
+
+            // Then — group row is restored and the student is put back into it; marker is cleared
+            // so a future delete/restore cycle can't double-fire.
+            verify(studentGroupRepository).restore(10L);
+            assertThat(studentEntity.getStudentGroup()).isSameAs(groupEntity);
+            assertThat(studentEntity.getDeletedFromGroupId()).isNull();
+            verify(userRepository).save(studentEntity);
+        }
+
+        @Test
+        @DisplayName("Should NOT move a former student who has since joined another group, but still clear the marker")
+        void shouldNotStealStudentFromCurrentGroup() {
+            // Given — student was in group 10 (marker = 10) but has since joined another group.
+            StudentGroupEntity otherGroup = new StudentGroupEntity();
+            otherGroup.setId(20L);
+            studentEntity.setStudentGroup(otherGroup);
+            studentEntity.setDeletedFromGroupId(10L);
+            when(studentGroupRepository.findDeletedById(10L)).thenReturn(Optional.of(studentGroup));
+            when(studentGroupJpaRepository.findById(10L)).thenReturn(Optional.of(groupEntity));
+            when(userRepository.findByDeletedFromGroupId(10L)).thenReturn(List.of(studentEntity));
+            when(studentGroupRepository.findById(10L)).thenReturn(Optional.of(studentGroup));
+
+            // When
+            studentGroupService.restoreGroup(10L);
+
+            // Then — current membership wins; the student stays in the other group. Marker is cleared
+            // regardless so it can't re-fire later.
+            assertThat(studentEntity.getStudentGroup()).isSameAs(otherGroup);
+            assertThat(studentEntity.getDeletedFromGroupId()).isNull();
+            verify(userRepository).save(studentEntity);
+        }
+
+        @Test
+        @DisplayName("Should throw when no deleted group matches the id")
+        void shouldThrowWhenDeletedGroupNotFound() {
+            // Given
+            when(studentGroupRepository.findDeletedById(999L)).thenReturn(Optional.empty());
+
+            // When/Then
+            assertThatThrownBy(() -> studentGroupService.restoreGroup(999L))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Deleted student group not found");
+            verify(studentGroupRepository, never()).restore(any());
         }
     }
 

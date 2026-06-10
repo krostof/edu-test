@@ -63,6 +63,10 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     @Query("SELECT u FROM UserEntity u JOIN u.roles r WHERE u.studentGroup IS NULL AND r = 'STUDENT'")
     List<UserEntity> findStudentsWithoutGroup();
 
+    // Former members of a since-deleted group, used by restoreGroup to re-attach them.
+    @Query("SELECT u FROM UserEntity u WHERE u.deletedFromGroupId = :groupId")
+    List<UserEntity> findByDeletedFromGroupId(@Param("groupId") Long groupId);
+
     // Soft-delete restore support. Native SQL bypasses @SQLRestriction (which always hides
     // deleted_at IS NOT NULL rows), so these are the only way to see/restore deleted users.
     @Query(value = "SELECT * FROM users WHERE deleted_at IS NOT NULL", nativeQuery = true)
